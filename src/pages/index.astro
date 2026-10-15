@@ -26,6 +26,10 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
     </script>
   </Fragment>
 
+  <button slot="bar" class="sound-toggle" id="sound-toggle" type="button" aria-pressed="false" aria-label="Звук">
+    <span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="sound-label">Звук</span>
+  </button>
+
   <!-- ТРЕЙЛЕР -->
   <div class="trailer" id="trailer" aria-hidden="true">
     <div class="tr-line"></div>
@@ -122,8 +126,15 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
   </nav>
   <div class="counter" aria-hidden="true"><b id="cur">01</b> / 0{slides.length}</div>
   <div class="cursor" aria-hidden="true"></div>
+  <div class="progress" aria-hidden="true"><span id="progress-bar"></span></div>
+  <button class="scroll-hint" type="button" data-go="1" aria-label="Следующий экран">
+    <span class="hint-mouse" aria-hidden="true"><i></i></span>
+    <span class="hint-finger" aria-hidden="true"><svg viewBox="0 0 24 40" fill="none"><rect x="1" y="1" width="22" height="38" rx="11" stroke="currentColor" stroke-width="1.5" opacity=".35"/><circle cx="12" cy="28" r="5" fill="currentColor"/></svg></span>
+    <span class="hint-text"><span class="hint-desk">Листайте</span><span class="hint-touch">Свайп вверх</span></span>
+  </button>
 
   <script>
+    import { feel, setSound, isSoundOn, soundPreference, armSoundFromPreference } from '../scripts/feel';
     const root = document.documentElement;
     const deck = document.getElementById('deck')!;
     const slides = [...document.querySelectorAll<HTMLElement>('.slide')];
@@ -173,30 +184,87 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
       cur.textContent = String(i + 1).padStart(2, '0');
       history.replaceState(null, '', i ? `#${slides[i].id}` : location.pathname + location.search);
     }
-    const step = (d: number) => {
-      if (!on || lock || playing || typing()) return;
-      const n = i + d; if (n < 0 || n >= slides.length) return;
-      lock = true; go(n); setTimeout(() => (lock = false), 1250);
+    const progress = document.getElementById('progress-bar')!;
+    const setProgress = () => (progress.style.transform = `scaleX(${(i + 1) / slides.length})`);
+    // Отклик на смену слайда: вход сквозь скважину — «поворот ключа», шторка — шелест, остальное — шаг.
+    const feelFor = (from: number, to: number) => {
+      if (from === 0 && to === 1) feel('unlock'); else if (to === 2) feel('curtain'); else feel('step', to > from ? 1 : -1);
     };
-    window.addEventListener('wheel', (e) => { if (on) { e.preventDefault(); if (Math.abs(e.deltaY) > 12) step(e.deltaY > 0 ? 1 : -1); } }, { passive: false });
+    const goFeel = (n: number) => {
+      if (!on || playing) return false;
+      const from = i; if (n === from || n < 0 || n >= slides.length) return false;
+      lock = true; go(n); feelFor(from, n); setProgress(); root.classList.add('hint-used');
+      setTimeout(() => (lock = false), 1250); return true;
+    };
+    // Один жест = один шаг: возвращает 'moved' | 'edge' | 'busy'.
+    const step = (d: number) => {
+      if (!on || lock || playing || typing()) return 'busy';
+      const n = i + d; if (n < 0 || n >= slides.length) { feel('edge'); return 'edge'; }
+      goFeel(n); return 'moved';
+    };
+
+    // Колесо и трекпад: жест = серия событий без пауз > 220 мс. Шагаем один раз за жест —
+    // инерция трекпада больше не перелистывает два слайда.
+    let wheelAcc = 0, lastWheel = 0, gestureUsed = false;
+    window.addEventListener('wheel', (e) => {
+      if (!on) return; e.preventDefault();
+      const now = performance.now();
+      if (now - lastWheel > 220) { gestureUsed = false; wheelAcc = 0; }
+      lastWheel = now; wheelAcc += e.deltaY;
+      if (!gestureUsed && Math.abs(wheelAcc) > 25) { gestureUsed = true; step(wheelAcc > 0 ? 1 : -1); }
+    }, { passive: false });
     window.addEventListener('keydown', (e) => {
       if (!on || playing || typing()) return;
       if (['ArrowDown', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); step(1); }
       if (['ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); step(-1); }
     });
-    let y0: number | null = null;
-    window.addEventListener('touchstart', (e) => { y0 = e.touches[0].clientY; }, { passive: true });
+
+    // Свайп: слайд тянется за пальцем с сопротивлением; на пороге — щелчок; у края — «резинка».
+    const THRESHOLD = 64;
+    let y0: number | null = null, x0 = 0, armed = false, dragging = false;
+    const setDrag = (px: number) => deck.style.setProperty('--drag', `${px}px`);
+    window.addEventListener('touchstart', (e) => {
+      if (!on || playing || typing() || e.touches.length > 1) return;
+      y0 = e.touches[0].clientY; x0 = e.touches[0].clientX; armed = false; dragging = false;
+      root.classList.add('dragging');
+    }, { passive: true });
+    window.addEventListener('touchmove', (e) => {
+      if (y0 === null) return;
+      const dy = y0 - e.touches[0].clientY, dx = x0 - e.touches[0].clientX;
+      if (!dragging && Math.abs(dx) > Math.abs(dy)) return;      // горизонтальные жесты не трогаем
+      dragging = true; e.preventDefault();
+      const atEdge = (dy > 0 && i === slides.length - 1) || (dy < 0 && i === 0);
+      const k = atEdge ? 0.14 : 0.32;                             // у края сильнее сопротивление
+      setDrag(Math.max(-90, Math.min(90, -dy * k)));
+      const nowArmed = !atEdge && Math.abs(dy) > THRESHOLD;
+      if (nowArmed !== armed) { armed = nowArmed; root.classList.toggle('armed', armed); if (armed) feel('tick'); }
+    }, { passive: false });
     window.addEventListener('touchend', (e) => {
-      if (y0 === null) return; const dy = y0 - e.changedTouches[0].clientY; y0 = null;
-      if (Math.abs(dy) > 50) step(dy > 0 ? 1 : -1);
+      if (y0 === null) return;
+      const dy = y0 - e.changedTouches[0].clientY; y0 = null;
+      root.classList.remove('dragging', 'armed'); setDrag(0);
+      if (!dragging) return;
+      if (Math.abs(dy) > THRESHOLD) step(dy > 0 ? 1 : -1);
+      else if (Math.abs(dy) > 30 && ((dy > 0 && i === slides.length - 1) || (dy < 0 && i === 0))) feel('edge');
     }, { passive: true });
     document.querySelectorAll<HTMLElement>('[data-go]').forEach((el) => el.addEventListener('click', (e) => {
-      e.preventDefault(); if (playing) return; lock = true; go(Number(el.dataset.go)); setTimeout(() => (lock = false), 1250);
+      e.preventDefault(); if (playing) return;
+      if (!on) { go(Number(el.dataset.go)); return; }
+      goFeel(Number(el.dataset.go));
     }));
+    // Браузер прокручивает слайд к полю с ошибкой или к фокусу — в режиме презентации это сдвигает экран.
+    // Горизонтальный сдвиг запрещён всегда; вертикальный — только пока человек печатает (клавиатура телефона).
+    addEventListener('scroll', (e) => {
+      const t = e.target;
+      if (!on || !(t instanceof HTMLElement) || !(t === deck || t.classList.contains('slide') || t.classList.contains('zoom'))) return;
+      if (t.scrollLeft) t.scrollLeft = 0;
+      if (t.scrollTop && !typing()) t.scrollTop = 0;
+    }, true);
+    addEventListener('focusout', () => setTimeout(() => { if (on && !typing()) slides.forEach((s) => { s.scrollTop = 0; s.scrollLeft = 0; }); }, 60));
     const start = slides.findIndex((s) => `#${s.id}` === location.hash);
     if (start > 0) i = start;
     let t: number; window.addEventListener('resize', () => { clearTimeout(t); t = window.setTimeout(apply, 150); });
-    apply(); document.fonts?.ready.then(apply);
+    apply(); setProgress(); document.fonts?.ready.then(apply);
 
     /* ---------- меняющееся слово ---------- */
     let rotStarted = false;
@@ -216,7 +284,11 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
     /* ---------- портфолио: раскрывающиеся панели ---------- */
     const panels = [...document.querySelectorAll<HTMLElement>('.panel')];
     const openPanel = (p: HTMLElement) => panels.forEach((x) => x.classList.toggle('open', x === p));
-    panels.forEach((p) => { p.addEventListener('mouseenter', () => openPanel(p)); p.addEventListener('focus', () => openPanel(p)); p.addEventListener('click', () => openPanel(p)); });
+    panels.forEach((p) => {
+      p.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') openPanel(p); });
+      p.addEventListener('focus', () => { if (p.matches(':focus-visible')) openPanel(p); });
+      p.addEventListener('click', () => { if (!p.classList.contains('open')) { openPanel(p); feel('open'); } });
+    });
 
     /* ---------- фонарик, курсор, магнитные кнопки (только мышь) ---------- */
     if (matchMedia('(pointer: fine)').matches && !reduce) {
@@ -239,10 +311,52 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
       });
     }
 
+    /* ---------- звук ---------- */
+    const soundBtn = document.getElementById('sound-toggle')!;
+    const paintSound = () => { soundBtn.setAttribute('aria-pressed', String(isSoundOn() || soundPreference())); };
+    soundBtn.addEventListener('click', () => { const v = !(isSoundOn()); setSound(v); paintSound(); if (v) feel('press'); });
+    armSoundFromPreference(); paintSound();
+
+    /* ---------- нажатия кнопок ---------- */
+    document.querySelectorAll<HTMLElement>('.btn, .big-link, .keyhole, .dot').forEach((el) =>
+      el.addEventListener('pointerdown', () => { if (!el.matches('[data-go]')) feel('press'); }));
+
+    /* ---------- телефон: палец — фонарик, наклон — свет в скважине ---------- */
+    if (matchMedia('(pointer: coarse)').matches && !reduce) {
+      const light = (x: number, y: number) => { root.style.setProperty('--mx', `${x}px`); root.style.setProperty('--my', `${y}px`); };
+      addEventListener('touchstart', (e) => light(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+      addEventListener('touchmove', (e) => light(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+      let tx = 0, ty = 0, gx = 0, gy = 0, tiltOn = false;
+      const onTilt = (e: DeviceOrientationEvent) => {
+        if (e.gamma == null || e.beta == null) return;
+        gx = Math.max(-1, Math.min(1, e.gamma / 25));
+        gy = Math.max(-1, Math.min(1, (e.beta - 45) / 25));
+        if (!tiltOn) { tiltOn = true; root.classList.add('tilt'); requestAnimationFrame(loop); }
+      };
+      const loop = () => {
+        tx += (gx - tx) * 0.08; ty += (gy - ty) * 0.08;
+        root.style.setProperty('--tx', tx.toFixed(3)); root.style.setProperty('--ty', ty.toFixed(3));
+        requestAnimationFrame(loop);
+      };
+      type DOE = typeof DeviceOrientationEvent & { requestPermission?: () => Promise<string> };
+      const DO = (window as unknown as { DeviceOrientationEvent?: DOE }).DeviceOrientationEvent;
+      if (DO && typeof DO.requestPermission === 'function') {
+        // iOS: разрешение на датчик движения — только в ответ на касание; спрашиваем один раз.
+        addEventListener('touchend', () => {
+          try { if (localStorage.getItem('ks_tilt') === 'no') return; } catch {}
+          DO.requestPermission!().then((r) => {
+            if (r === 'granted') addEventListener('deviceorientation', onTilt);
+            else try { localStorage.setItem('ks_tilt', 'no'); } catch {}
+          }).catch(() => {});
+        }, { once: true });
+      } else if (DO) addEventListener('deviceorientation', onTilt);
+    }
+
     /* ---------- заявка ---------- */
     try { if (new URLSearchParams(location.search).get('utm_source')) sessionStorage.setItem('ks_utm', location.search); } catch {}
     document.querySelectorAll<HTMLFormElement>('form.js-lead').forEach((form) => {
       const status = form.querySelector<HTMLElement>('.form-status');
+      form.addEventListener('invalid', () => { if (!form.dataset.buzzed) { form.dataset.buzzed = '1'; feel('error'); setTimeout(() => delete form.dataset.buzzed, 400); } }, true);
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = form.querySelector<HTMLButtonElement>('button[type="submit"]');
@@ -254,9 +368,9 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
         try {
           const r = await fetch(form.action, { method: 'POST', body: fd });
           const j = await r.json().catch(() => ({}));
-          if (r.ok && j.ok) { const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/'; location.href = base + 'thanks/'; return; }
-          if (status) status.textContent = 'Не удалось отправить. Напишите нам в Telegram или позвоните.';
-        } catch { if (status) status.textContent = 'Нет связи. Напишите нам в Telegram или позвоните.'; }
+          if (r.ok && j.ok) { feel('success'); await new Promise((ok) => setTimeout(ok, 350)); const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/'; location.href = base + 'thanks/'; return; }
+          feel('error'); if (status) status.textContent = 'Не удалось отправить. Напишите нам в Telegram или позвоните.';
+        } catch { feel('error'); if (status) status.textContent = 'Нет связи. Напишите нам в Telegram или позвоните.'; }
         if (btn) btn.disabled = false;
       });
     });

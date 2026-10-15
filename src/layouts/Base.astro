@@ -54,6 +54,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
     <nav class="bar-links" aria-label="Контакты">
       <a href={brand.phoneHref} class="hide-sm">{brand.phone}</a>
       <a href={brand.telegram} rel="noopener">Telegram</a>
+      <slot name="bar" />
     </nav>
   </header>
   <slot />
