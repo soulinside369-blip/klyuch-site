@@ -5,7 +5,7 @@ import type { Case } from '../data/site';
 interface Props { c: Case; i: number; }
 const { c, i } = Astro.props;
 const t = c.theme;
-const style = `--p-bg:${t.bg};--p-text:${t.text};--p-line:${t.line};--p-faint:${t.faint};--p-acc:${t.accent};${t.stripe ? `--p-stripe:${t.stripe};` : ''}`;
+const style = `--pi:${i};--p-bg:${t.bg};--p-text:${t.text};--p-line:${t.line};--p-faint:${t.faint};--p-acc:${t.accent};${t.stripe ? `--p-stripe:${t.stripe};` : ''}`;
 ---
 <article class={`panel${i === 0 ? ' open' : ''}${t.stripe ? ' striped' : ''}`} style={style} tabindex="0" aria-label={`${c.client} — ${c.work}, ${c.industry}`}>
   <div class="panel-top"><span class="panel-num">0{i + 1}</span><span class="panel-tag">{c.work}</span></div>

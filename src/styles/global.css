@@ -88,6 +88,22 @@ html.trailer-on:not(.tr-go) .trailer *{animation-play-state:paused!important}
 .tr-word .ch{margin:0 .22em;transform:translateY(120%) scale(.6);filter:blur(10px);opacity:0;animation:ch-in var(--di,1.2s) var(--soft) calc(var(--t) + var(--i) * var(--st,140ms)) forwards}
 .tr-skip{position:absolute;right:var(--pad);bottom:28px;background:none;border:1px solid var(--line-3);color:var(--dim);border-radius:999px;padding:10px 18px;font:400 12px var(--mono);letter-spacing:1.5px;cursor:pointer}
 .tr-skip:hover{color:var(--text);border-color:var(--text)}
+/* «Пропустить» показывает, сколько осталось: золотая полоса заполняет кнопку за время трейлера */
+.tr-skip{overflow:hidden;isolation:isolate}
+.tr-skip::after{content:'';position:absolute;inset:auto 0 0 0;height:2px;background:var(--accent);transform:scaleX(0);transform-origin:left;animation:tr-prog 7.2s linear forwards;z-index:-1}
+/* «Смотреть со звуком» */
+.tr-sound{position:absolute;left:var(--pad);bottom:28px;display:inline-flex;align-items:center;gap:10px;min-height:40px;background:none;border:1px solid rgba(232,176,75,.55);color:var(--accent);border-radius:999px;padding:0 18px;font:400 12px var(--mono);letter-spacing:1.5px;cursor:pointer;
+  opacity:0;animation:tr-fadein .6s ease .4s forwards}
+.tr-sound:hover{background:rgba(232,176,75,.1)}
+.tr-eq{display:inline-flex;align-items:flex-end;gap:2px;height:12px}
+.tr-eq i{width:2px;height:30%;background:currentColor;border-radius:1px}
+.tr-sound.on{pointer-events:none;border-color:transparent;color:var(--dim)}
+.tr-sound.on .tr-eq i{animation:eq .9s ease-in-out infinite alternate}
+.tr-sound.on .tr-eq i:nth-child(2){animation-delay:-.3s}.tr-sound.on .tr-eq i:nth-child(3){animation-delay:-.6s}.tr-sound.on .tr-eq i:nth-child(4){animation-delay:-.15s}
+@keyframes eq{0%{height:20%}100%{height:100%}}
+@keyframes tr-fadein{to{opacity:1}}
+.ts-m{display:none}@media(max-width:640px){.ts-d{display:none}.ts-m{display:inline}}
+@media(max-width:640px){.tr-sound{bottom:calc(28px + env(safe-area-inset-bottom));padding:0 14px}.tr-skip{bottom:calc(28px + env(safe-area-inset-bottom))}}
 /* финал: растворение сквозь скважину в месте, где она стоит на первом слайде */
 .trailer-out .trailer{
   -webkit-mask:linear-gradient(#000 0 0),var(--keyhole) no-repeat;
@@ -183,6 +199,8 @@ html.deck-on .dots{display:flex}
 .counter{position:fixed;left:var(--pad);bottom:24px;z-index:40;display:none;font:400 12px var(--mono);letter-spacing:2px;color:var(--faint)}
 html.deck-on .counter{display:block}
 .counter b{color:var(--text);font-weight:400}
+.counter{transition:bottom .6s var(--ease),color .6s ease}
+html.deck-on[data-slide="0"] .counter{bottom:64px}  /* на первом слайде — над бегущей строкой, не на ней */
 @media(max-width:640px){html.deck-on .counter{display:none}html.deck-on .dots{display:none}html.deck-on .slide{padding-right:var(--pad)}html.deck-on .zoom{padding-right:var(--pad)}}
 
 /* =========================================================
@@ -216,6 +234,7 @@ html.deck-on .is-active .sh .ch{transform:none}
 .hero .lead{margin:clamp(16px,3vh,28px) 0 0;max-width:520px;font-size:clamp(16px,1.35vw,19px);color:var(--dim)}
 .actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:clamp(20px,4vh,40px)}
 .kicker b{color:var(--text);font-weight:400}
+@media(max-width:640px){.kicker .sep{display:none}.kicker b{display:block;margin-top:6px}}
 .nw{white-space:nowrap}
 /* гарантии: снимают риск до первого разговора */
 .guarantees{display:flex;flex-wrap:wrap;gap:8px 22px;margin:clamp(14px,2.4vh,24px) 0 0;padding:0;list-style:none;font-size:14px;color:var(--dim)}
@@ -311,6 +330,10 @@ html.deck-on .is-active .sh .ch{transform:none}
   .panel-ind{font-size:10px}
 }
 
+/* портфолио: панели входят по очереди, когда открываем слайд */
+html.deck-on .s-work.is-active .panel{animation:panel-in 1s var(--ease) both;animation-delay:calc(.5s + var(--pi) * .09s)}
+@keyframes panel-in{from{opacity:0;translate:0 56px}to{opacity:1;translate:0 0}}
+
 /* =========================================================
    3. КОНТАКТЫ
    ========================================================= */
@@ -356,6 +379,10 @@ html.deck-on .is-active .sh .ch{transform:none}
   .form .field{padding-top:14px}.form .field label{top:26px}
   .s-contact{padding-bottom:44px}.legal{bottom:14px}
 }
+/* контакты: форма выезжает справа после шторки */
+html.deck-on .s-contact.is-active .form{animation:form-in 1s var(--ease) .55s both}
+@keyframes form-in{from{opacity:0;translate:48px 0}to{opacity:1;translate:0 0}}
+@media(max-width:900px){@keyframes form-in{from{opacity:0;translate:0 40px}to{opacity:1;translate:0 0}}}
 html.deck-on[data-slide="2"] .counter,html.deck-on[data-slide="2"] .counter b,html.deck-on[data-slide="2"] .bar-links a,html.deck-on[data-slide="2"] .logo{color:#111}
 html.deck-on[data-slide="2"] .logo svg{stroke:#111}
 html.deck-on[data-slide="2"] .dot::after{border-color:rgba(17,17,17,.4)}
@@ -366,12 +393,18 @@ html.deck-on[data-slide="2"] .dot[aria-current="true"]::after{background:#111;bo
 .echo-wrap{position:relative;display:block}
 .echo{position:absolute;left:.05em;top:.07em;z-index:-1;color:transparent;-webkit-text-stroke:1px rgba(232,176,75,.55);white-space:nowrap;pointer-events:none;opacity:0;transition:opacity 1.2s ease .9s}
 html.hero-in .echo,html:not(.deck-on) .echo{opacity:1}
-.ghost-num{position:absolute;z-index:-1;left:-.06em;top:-.5em;font:700 clamp(110px,16vw,260px)/1 var(--display);color:transparent;-webkit-text-stroke:1px rgba(232,176,75,.28);letter-spacing:-.04em;pointer-events:none;user-select:none}
+.ghost-num{position:absolute;z-index:-1;left:-.06em;top:-.36em;font:700 clamp(110px,16vw,260px)/1 var(--display);color:transparent;-webkit-text-stroke:1px rgba(232,176,75,.28);letter-spacing:-.04em;pointer-events:none;user-select:none}
 .s-contact .ghost-num{-webkit-text-stroke-color:rgba(17,17,17,.22)}
 html.deck-on .ghost-num{transform:translateY(40px);opacity:0;transition:transform 1.2s var(--ease) .3s,opacity 1s ease .3s}
 html.deck-on .is-active .ghost-num{transform:none;opacity:1}
 .btn-primary{position:relative}
 .btn-primary::before{content:'';position:absolute;inset:-6px;border:1px solid rgba(232,176,75,.45);border-radius:inherit;transition:inset .35s var(--ease),border-color .35s;pointer-events:none}
+.btn-primary{isolation:isolate}
+.btn-primary::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:-1;
+  background:linear-gradient(105deg,transparent 38%,rgba(255,255,255,.6) 50%,transparent 62%) var(--accent);background-size:260% 100%;background-position:130% 0;
+  animation:glint 5.5s ease-in-out 3s infinite}
+.btn-primary:hover::after{background-color:var(--accent-hi)}
+@keyframes glint{0%,72%{background-position:130% 0}100%{background-position:-30% 0}}
 .btn-primary:hover::before{inset:-10px;border-color:rgba(232,176,75,.8)}
 .s-contact .big-link{position:relative}
 

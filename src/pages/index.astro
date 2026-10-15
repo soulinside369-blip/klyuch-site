@@ -48,6 +48,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
       </svg>
       <span class="tr-word" style="--t:5.6s;--st:80ms;--di:.75s"><Split text={brand.name} /></span>
     </div>
+    <button class="tr-sound" type="button" id="tr-sound"><span class="tr-eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="ts-d">Смотреть со звуком</span><span class="ts-m">Со звуком</span></button>
     <button class="tr-skip" type="button" id="tr-skip">Пропустить ›</button>
   </div>
 
@@ -56,7 +57,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
     <section class="slide s-start" id="start" aria-label="Старт">
       <div class="hero-bg" aria-hidden="true"></div>
       <div class="slide-inner hero">
-        <div class="kicker reveal">{hero.kicker} · <b class="nw">от {hero.range.from} до {hero.range.to}</b></div>
+        <div class="kicker reveal">{hero.kicker}<span class="sep"> · </span><b class="nw">от {hero.range.from} до {hero.range.to}</b></div>
         <h1>
           <span class="echo-wrap"><Split text={hero.titleStart} class="h1-a" /><span class="echo" aria-hidden="true">{hero.titleStart}</span></span>
           <span class="rot" aria-hidden="true">{hero.rotating.map((w, k) => <span class={`rw${k === 0 ? ' on' : ''}`}><Split text={w} /></span>)}</span>
@@ -88,7 +89,6 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
           <span class="ghost-num" aria-hidden="true">02</span>
           <div class="s-head">
             <div><div class="kicker reveal">02 / Портфолио</div><h2><Split text="Нам доверяют лидеры рынков" class="sh" /></h2></div>
-            <p class="reveal">Проекты от {hero.range.from} до {hero.range.to}. Здесь — четыре из многих.</p>
           </div>
           <div class="panels reveal" id="panels">{publishedCases.map((c, i) => <CasePanel c={c} i={i} />)}</div>
         </div>
@@ -96,7 +96,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
     </section>
 
     <!-- скважина: над портфолио, пока мы на первом слайде -->
-    <button class="keyhole" type="button" data-go="1" aria-label="Загляните внутрь — портфолио">
+    <button class="keyhole" type="button" data-go="1">
       <svg viewBox="0 0 100 100" fill="none" aria-hidden="true"><path d={keyholePath} stroke="#E8B04B" stroke-width="1.2" vector-effect="non-scaling-stroke"/></svg>
       <span class="keyhole-label"><span class="kl-d">Загляните внутрь ↓</span><span class="kl-m">Открыть кейсы</span></span>
     </button>
@@ -142,7 +142,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
   </button>
 
   <script>
-    import { feel, setSound, isSoundOn, soundPreference, armSoundFromPreference } from '../scripts/feel';
+    import { feel, setSound, isSoundOn, soundPreference, armSoundFromPreference, playTrailerScore } from '../scripts/feel';
     const root = document.documentElement;
     const deck = document.getElementById('deck')!;
     const slides = [...document.querySelectorAll<HTMLElement>('.slide')];
@@ -162,15 +162,25 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
     };
     if (playing) {
       // Старт после загрузки шрифта (не дольше 700 мс), чтобы буквы не «прыгали» с системного шрифта.
-      let tm = 0;
-      const begin = () => { if (root.classList.contains('tr-go')) return; root.classList.add('tr-go'); tm = window.setTimeout(endTrailer, 7200); };
+      let tm = 0, goAt = 0;
+      const begin = () => { if (root.classList.contains('tr-go')) return; root.classList.add('tr-go'); goAt = performance.now(); tm = window.setTimeout(endTrailer, 7200); };
       Promise.race([document.fonts?.ready, new Promise((r) => setTimeout(r, 700))]).then(begin);
       const skip = () => { clearTimeout(tm); endTrailer(); };
+      // «Смотреть со звуком»: нажатие = разрешение браузера на звук; партитура догоняет трейлер с текущего места.
+      const soundBtn0 = document.getElementById('tr-sound')!;
+      const t0 = () => (root.classList.contains('tr-go') ? (performance.now() - goAt) / 1000 : 0);
+      soundBtn0.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setSound(true); document.getElementById('sound-toggle')?.setAttribute('aria-pressed', 'true');
+        playTrailerScore(t0(), [0, 1, 2, 3, 4].map((k) => 0.3 + k * 0.6));
+        soundBtn0.classList.add('on');
+      });
+      const notSound = (e: Event) => !(e.target instanceof Element && e.target.closest('.tr-sound'));
       document.getElementById('tr-skip')!.addEventListener('click', skip);
-      trailerEl.addEventListener('click', skip);
+      trailerEl.addEventListener('click', (e) => notSound(e) && skip());
       addEventListener('wheel', () => playing && skip(), { passive: true });
-      addEventListener('touchstart', () => playing && skip(), { passive: true });
-      window.addEventListener('keydown', (e) => { if (playing) { e.preventDefault(); skip(); } });
+      addEventListener('touchstart', (e) => playing && notSound(e) && skip(), { passive: true });
+      window.addEventListener('keydown', (e) => { if (playing && notSound(e)) { e.preventDefault(); skip(); } });
     } else { trailerEl.remove(); }
 
     /* ---------- дека ---------- */
