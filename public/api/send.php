@@ -1,6 +1,7 @@
 <?php
 // Приём заявки с сайта → Telegram. Настройки — в config.php рядом (не в репозитории).
 header('Content-Type: application/json; charset=utf-8');
+date_default_timezone_set('Europe/Moscow');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); echo '{"ok":false}'; exit; }
 
@@ -44,6 +45,22 @@ $text = "🔑 Заявка с сайта КЛЮЧ\n\nИмя: $name\nКонтак
   . ($task ? "\n\nЗадача:\n$task" : '')
   . "\n\nСтраница: $page" . ($utm ? "\nUTM: $utm" : '');
 
+// 1) Заявка сначала сохраняется на сервере в РФ (ч. 5 ст. 18 152-ФЗ — локализация) — она не потеряется, даже если Telegram недоступен.
+$dir = __DIR__ . '/leads';
+if (!is_dir($dir)) { @mkdir($dir, 0750, true); }
+if (!is_file("$dir/.htaccess")) { @file_put_contents("$dir/.htaccess", "Require all denied\nDeny from all\n"); }
+$id = date('Ymd-His') . '-' . substr(bin2hex(random_bytes(3)), 0, 6);
+$row = [$id, date('c'), $name, $contact, $service, $budget, str_replace(["\r", "\n"], ' ', $task), $page, $utm];
+$fh = @fopen("$dir/leads.csv", 'a');
+if ($fh) { if (flock($fh, LOCK_EX)) { fputcsv($fh, $row, ';'); flock($fh, LOCK_UN); } fclose($fh); }
+$saved = (bool)$fh;
+
+// 2) Уведомление в Telegram. 'telegram_personal' => false — в Telegram уходит только номер заявки,
+//    без имени и контакта (тогда нет трансграничной передачи ПДн; заявку смотрят в api/leads/leads.csv на сервере).
+if (($cfg['telegram_personal'] ?? true) === false) {
+  $text = "🔑 Новая заявка с сайта КЛЮЧ\nНомер: $id\nСмотреть: api/leads/leads.csv на сервере";
+}
+
 $ch = curl_init("https://api.telegram.org/bot{$cfg['token']}/sendMessage");
 curl_setopt_array($ch, [
   CURLOPT_POST => true,
@@ -55,4 +72,5 @@ $res = curl_exec($ch);
 $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
 
-if ($code === 200) { echo '{"ok":true}'; } else { http_response_code(502); echo '{"ok":false}'; }
+// Заявка принята, если она сохранена на сервере ИЛИ дошла в Telegram.
+if ($code === 200 || $saved) { echo '{"ok":true}'; } else { http_response_code(502); echo '{"ok":false}'; }

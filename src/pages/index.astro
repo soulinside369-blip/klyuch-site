@@ -111,8 +111,8 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
           <p class="lead reveal">{contact.lead}</p>
           <div class="big-links reveal">
             <a href={brand.telegram} rel="noopener" class="big-link" data-magnetic>Telegram <i>↗</i></a>
-            <a href={brand.phoneHref} class="mid-link">{brand.phone}</a>
-            <a href={`mailto:${brand.email}`} class="mid-link">{brand.email}</a>
+            <a href={brand.phoneHref} class="mid-link mid-phone">{brand.phone}</a>
+            {!brand.email.startsWith('[') && <a href={`mailto:${brand.email}`} class="mid-link mid-mail">{brand.email}</a>}
           </div>
         </div>
         <form class="form js-lead reveal" action={`${B}api/send.php`} method="post" novalidate data-tg={brand.telegram}>
@@ -120,12 +120,12 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
           <div class="field"><input id="f-name" name="name" type="text" autocomplete="name" required minlength="2" placeholder=" "><label for="f-name">Как вас зовут</label><span class="field-msg">Минимум 2 буквы</span></div>
           <div class="field"><input id="f-contact" name="contact" type="text" autocomplete="tel" required pattern="^(\+?[0-9][0-9\s()\-]{9,}|@?[A-Za-z0-9_]{5,})$" placeholder=" "><label for="f-contact">Телефон или @telegram</label><span class="field-msg">Номер телефона или ник в Telegram</span></div>
           <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
-          <label class="consent"><input type="checkbox" name="consent" value="1" required><span>Даю <a href={`${B}privacy/#consent`}>согласие на обработку персональных данных</a></span></label>
+          <label class="consent"><input type="checkbox" name="consent" value="1" required><span>Даю <a href={`${B}consent/`} target="_blank" rel="noopener">согласие на обработку персональных данных</a></span></label>
           <button type="submit" class="btn btn-primary" data-magnetic>Жду звонка</button>
           <div class="form-status" role="status" aria-live="polite"></div>
         </form>
       </div>
-      <div class="legal">© {new Date().getFullYear()} {brand.name} · {brand.legal} · <a href={`${B}privacy/`}>Политика ПДн</a></div>
+      <div class="legal">© {new Date().getFullYear()} {brand.name}{!brand.legal.startsWith('[') && ` · ${brand.legal}`} · <a href={`${B}privacy/`}>Политика ПДн</a></div>
     </section>
   </main>
 
@@ -144,6 +144,13 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
   <script>
     import { feel, setSound, isSoundOn, soundPreference, armSoundFromPreference, playTrailerScore, soundUnlocked } from '../scripts/feel';
     const root = document.documentElement;
+    // Цели Яндекс Метрики (список и идентификаторы — в site.ts → analytics). Без номера счётчика ничего не отправляется.
+    const ymId = Number(root.dataset.ym || 0);
+    const sent = new Set<string>();
+    const goal = (name: string, once = true) => {
+      if (!ymId || (once && sent.has(name))) return; sent.add(name);
+      try { (window as unknown as { ym?: (...a: unknown[]) => void }).ym?.(ymId, 'reachGoal', name); } catch {}
+    };
     const deck = document.getElementById('deck')!;
     const slides = [...document.querySelectorAll<HTMLElement>('.slide')];
     const dots = [...document.querySelectorAll<HTMLButtonElement>('.dot')];
@@ -165,9 +172,9 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
     if (playing) {
       // Старт после загрузки шрифта (не дольше 700 мс), чтобы буквы не «прыгали» с системного шрифта.
       let tm = 0, goAt = 0;
-      const begin = () => { if (root.classList.contains('tr-go')) return; root.classList.add('tr-go'); goAt = performance.now(); tm = window.setTimeout(endTrailer, 7200); };
+      const begin = () => { if (root.classList.contains('tr-go')) return; root.classList.add('tr-go'); goAt = performance.now(); tm = window.setTimeout(() => { goal('trailer_full'); endTrailer(); }, 7200); };
       Promise.race([document.fonts?.ready, new Promise((r) => setTimeout(r, 700))]).then(begin);
-      const skip = () => { clearTimeout(tm); endTrailer(); };
+      const skip = () => { clearTimeout(tm); goal('trailer_skip'); endTrailer(); };
       // Звук по умолчанию включён: партитура стартует, как только браузер разрешит звук (первое касание/клик/клавиша).
       // Первое касание трейлера — это и есть «включить звук», а не «пропустить». Пропуск — кнопкой, колесом, клавишей, свайпом.
       const soundBtn0 = document.getElementById('tr-sound')!;
@@ -184,7 +191,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
       soundBtn0.addEventListener('click', (e) => {
         e.stopPropagation();
         const v = !(isSoundOn() && soundUnlocked());
-        setSound(v); document.getElementById('sound-toggle')?.setAttribute('aria-pressed', String(v));
+        setSound(v); document.getElementById('sound-toggle')?.setAttribute('aria-pressed', String(v)); if (v) goal('sound_on');
         if (v) { scored = false; startScore(); }
         paintTr();
       });
@@ -275,6 +282,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
       if (!on || playing) return false;
       const from = i; if (n === from || n < 0 || n >= slides.length) return false;
       lock = true; go(n); feelFor(from, n); setProgress(); root.classList.add('hint-used');
+      goal(n === 1 ? 'portfolio' : n === 2 ? 'contacts' : 'start');
       setTimeout(() => (lock = false), 900); return true;   // быстрый повторный свайп не «теряется»
     };
     // Один жест = один шаг: возвращает 'moved' | 'edge' | 'busy'.
@@ -367,7 +375,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
 
     /* ---------- портфолио: раскрывающиеся панели ---------- */
     const panels = [...document.querySelectorAll<HTMLElement>('.panel')];
-    const openPanel = (p: HTMLElement) => panels.forEach((x) => x.classList.toggle('open', x === p));
+    const openPanel = (p: HTMLElement) => { if (p !== panels[0] || p.dataset.seen) goal('case_open'); p.dataset.seen = '1'; panels.forEach((x) => x.classList.toggle('open', x === p)); };
     panels.forEach((p) => {
       p.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') openPanel(p); });
       p.addEventListener('focus', () => { if (p.matches(':focus-visible')) openPanel(p); });
@@ -430,7 +438,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
     /* ---------- звук ---------- */
     const soundBtn = document.getElementById('sound-toggle')!;
     const paintSound = () => { soundBtn.setAttribute('aria-pressed', String(isSoundOn())); };
-    soundBtn.addEventListener('click', () => { const v = !(isSoundOn()); setSound(v); paintSound(); if (v) feel('press'); });
+    soundBtn.addEventListener('click', () => { const v = !(isSoundOn()); setSound(v); paintSound(); if (v) { feel('press'); goal('sound_on'); } });
     armSoundFromPreference(() => { soundReady(); paintSound(); }); paintSound(); soundReady0();
 
     /* ---------- нажатия кнопок ---------- */
@@ -460,6 +468,14 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
       if (DO && typeof DO.requestPermission !== 'function') addEventListener('deviceorientation', onTilt);
     }
 
+    /* ---------- цели: клики по контактам и главной кнопке ---------- */
+    document.addEventListener('click', (e) => {
+      const a = (e.target as Element).closest?.('a'); if (!a) return;
+      if (a.href.startsWith('https://t.me/')) goal('telegram', false);
+      else if (a.href.startsWith('tel:')) goal('phone', false);
+      else if (a.matches('.btn-primary[data-go="2"]')) goal('cta');
+    }, true);
+
     /* ---------- заявка ---------- */
     try { if (new URLSearchParams(location.search).get('utm_source')) sessionStorage.setItem('ks_utm', location.search); } catch {}
     document.querySelectorAll<HTMLFormElement>('form.js-lead').forEach((form) => {
@@ -485,7 +501,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
         e.preventDefault();
         const bad = [...inputs, ...(consent ? [consent] : [])].filter((el) => !mark(el));
         if (bad.length) {
-          feel('error');
+          feel('error'); goal('form_error');
           if (status) status.textContent = bad[0] === consent ? 'Отметьте согласие на обработку данных.' : 'Проверьте выделенные поля.';
           bad[0].focus({ preventScroll: true });
           return;
@@ -501,7 +517,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
           // Нет PHP (GitHub Pages, статичный хостинг): сервер отдаёт 404/405 или сам файл вместо JSON.
           if ([404, 405, 501].includes(r.status) || !(r.headers.get('content-type') || '').includes('json')) { showFallback(); if (btn) btn.disabled = false; return; }
           const j = await r.json().catch(() => ({}));
-          if (r.ok && j.ok) { feel('success'); await new Promise((ok) => setTimeout(ok, 350)); const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/'; location.href = base + 'thanks/'; return; }
+          if (r.ok && j.ok) { feel('success'); goal('lead', false); await new Promise((ok) => setTimeout(ok, 350)); const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/'; location.href = base + 'thanks/'; return; }
           feel('error'); if (status) status.textContent = 'Не удалось отправить. Напишите нам в Telegram или позвоните.';
         } catch { feel('error'); if (status) status.textContent = 'Нет связи. Напишите нам в Telegram или позвоните.'; }
         if (btn) btn.disabled = false;

@@ -1,0 +1,14 @@
+---
+// Вывод юридического документа из src/data/legal.ts: заголовки, абзацы, списки. Ссылки в тексте становятся кликабельными.
+import type { LegalBlock } from '../data/legal';
+interface Props { blocks: LegalBlock[]; skipFirstHeading?: boolean }
+const { blocks, skipFirstHeading = false } = Astro.props;
+const linkify = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/(https:\/\/[^\s]+?)(\.?)(\s|$)/g, '<a href="$1" rel="noopener">$1</a>$2$3');
+---
+{blocks.map((b, k) => (
+  <section class="doc-block">
+    {!(skipFirstHeading && k === 0) && <h2>{b.h}</h2>}
+    {b.p?.map((t) => <p set:html={linkify(t)} />)}
+    {b.li && <ul>{b.li.map((t) => <li set:html={linkify(t)} />)}</ul>}
+  </section>
+))}

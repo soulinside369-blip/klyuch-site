@@ -1,0 +1,15 @@
+---
+// Согласие — отдельный документ (с 01.09.2025 согласие на обработку ПДн оформляется отдельно от иных документов).
+import Base from '../layouts/Base.astro';
+import LegalDoc from '../components/LegalDoc.astro';
+import { consent } from '../data/legal';
+const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/';
+---
+<Base title="Согласие на обработку персональных данных — КЛЮЧ" description="Текст согласия на обработку персональных данных при отправке заявки.">
+  <main class="page"><div class="inner">
+    <a href={B} class="kicker" style="text-decoration:none">← На главную</a>
+    <h1>Согласие на обработку персональных данных</h1>
+    <LegalDoc blocks={consent} skipFirstHeading />
+    <p class="doc-meta"><a href={`${B}privacy/`}>Политика обработки персональных данных</a></p>
+  </div></main>
+</Base>

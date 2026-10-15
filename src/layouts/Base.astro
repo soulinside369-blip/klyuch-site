@@ -14,7 +14,8 @@ import unbounded700 from '@fontsource/unbounded/files/unbounded-cyrillic-700-nor
 import unbounded500 from '@fontsource/unbounded/files/unbounded-cyrillic-500-normal.woff2?url';
 import manrope400 from '@fontsource/manrope/files/manrope-cyrillic-400-normal.woff2?url';
 import '../styles/global.css';
-import { brand } from '../data/site';
+import { brand, analytics } from '../data/site';
+const ym = /^\d+$/.test(analytics.metrikaId) ? analytics.metrikaId : '';
 
 interface Props { title: string; description: string; noindex?: boolean; schema?: Record<string, unknown>[]; }
 const { title, description, noindex = false, schema = [] } = Astro.props;
@@ -22,12 +23,15 @@ const canonical = new URL(Astro.url.pathname, Astro.site).href;
 const org = {
   '@context': 'https://schema.org', '@type': 'ProfessionalService', name: brand.name, url: Astro.site?.href,
   priceRange: '30000 ₽ – 25000000 ₽', areaServed: 'RU',
+  // Контакты — только реальные (заглушки «[…]» в разметку поисковиков не попадают).
+  ...(brand.phone.startsWith('[') ? {} : { telephone: brand.phoneHref.replace('tel:', '') }),
+  ...(brand.telegram.length > 13 ? { sameAs: [brand.telegram] } : {}),
   knowsAbout: ['Разработка мобильных приложений', 'Разработка сайтов', 'Контекстная реклама', 'Маркетинг', 'Автоматизация бизнеса', 'IT-консалтинг'],
 };
 const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/';
 ---
 <!doctype html>
-<html lang="ru" style="background:#0B0C0E">
+<html lang="ru" style="background:#0B0C0E" data-ym={ym || undefined}>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -55,6 +59,16 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
   <link rel="preload" href={manrope400} as="font" type="font/woff2" crossorigin>
   <slot name="head" />
   <script type="application/ld+json" set:html={JSON.stringify([org, ...schema])} />
+  {ym && (
+    <script is:inline define:vars={{ ym }}>
+      // Яндекс Метрика (официальный код). Вебвизор выключен: записи сессий не ведём — меньше персональных данных.
+      (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();
+      for (var j = 0; j < document.scripts.length; j++) { if (document.scripts[j].src === r) { return; } }
+      k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+      (window, document, 'script', 'https://mc.yandex.ru/metrika/tag.js', 'ym');
+      window.ym(Number(ym), 'init', { clickmap: true, trackLinks: true, accurateTrackBounce: true, webvisor: false });
+    </script>
+  )}
 </head>
 <body>
   <header class="bar">
@@ -69,5 +83,20 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
     </nav>
   </header>
   <slot />
+  {ym && (
+    <div class="cookie" id="cookie" hidden>
+      <span>Сайт использует cookie и Яндекс Метрику для статистики. <a href={`${B}privacy/`}>Подробнее</a></span>
+      <button type="button" id="cookie-ok">Понятно</button>
+    </div>
+    <script is:inline>
+      (function () {
+        var c = document.getElementById('cookie'); if (!c) return;
+        try { if (localStorage.getItem('ks_cookie') === '1') return; } catch (e) {}
+        // на главной — после заставки, чтобы не спорить с трейлером
+        setTimeout(function () { c.hidden = false; }, document.documentElement.classList.contains('trailer-on') ? 9000 : 1200);
+        document.getElementById('cookie-ok').addEventListener('click', function () { c.hidden = true; try { localStorage.setItem('ks_cookie', '1'); } catch (e) {} });
+      })();
+    </script>
+  )}
 </body>
 </html>
