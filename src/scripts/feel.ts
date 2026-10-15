@@ -119,8 +119,8 @@ export function setSound(v: boolean) {
   if (v) { audio(); SOUNDS.toggle(); }
 }
 // Сохранённое «включено» оживает только после первого действия человека (политика автозапуска).
-// Браузеры не дают сайту звучать до первого действия человека. Поэтому: пробуем сразу (Chrome иногда разрешает
-// сайтам, где человек уже бывал), иначе звук оживает от первого касания, клика или клавиши — без отдельного вопроса.
+// Браузеры не дают сайту звучать до первого действия человека. Поэтому звук оживает от первого касания, клика или клавиши —
+// без отдельного вопроса.
 // onReady вызывается один раз, когда звук реально заработал.
 let unlocked = false;
 export function soundUnlocked() { return unlocked; }
@@ -128,7 +128,7 @@ export function armSoundFromPreference(onReady?: () => void) {
   if (!soundPreference()) return;
   soundOn = true;
   const ready = () => { if (unlocked) return; unlocked = true; onReady?.(); };
-  try { const c = audio(); if (c.state === 'running') { ready(); return; } c.onstatechange = () => { if (c.state === 'running') ready(); }; } catch { return; }
+  // AudioContext создаём только по первому жесту: создание при загрузке стоило ~150 мс на слабом телефоне (Lighthouse TBT).
   const arm = () => {
     try { audio().resume().then(() => { if (ctx!.state === 'running') ready(); }); } catch {}
     ['pointerdown', 'keydown', 'touchend'].forEach((t) => removeEventListener(t, arm, true));

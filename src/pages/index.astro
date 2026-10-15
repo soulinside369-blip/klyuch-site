@@ -345,7 +345,10 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
     const start = slides.findIndex((s) => `#${s.id}` === location.hash);
     if (start > 0) i = start;
     let t: number; window.addEventListener('resize', () => { clearTimeout(t); t = window.setTimeout(apply, 150); });
-    apply(); setProgress(); document.fonts?.ready.then(apply);
+    // Пока идёт трейлер, деку уже включил head-скрипт: проверку «влезает ли» делаем один раз, после загрузки шрифтов
+    // (каждая проверка — полный пересчёт раскладки, ~100 мс на слабом телефоне).
+    if (playing && document.fonts) { document.fonts.ready.then(apply); } else { apply(); document.fonts?.ready.then(apply); }
+    setProgress();
 
     /* ---------- меняющееся слово ---------- */
     let rotStarted = false;
@@ -382,8 +385,26 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
         cursor.classList.toggle('hover', !!h); cursor.classList.remove('away');
       });
       document.addEventListener('mouseleave', () => cursor.classList.add('away'));
-      const loop = () => { cx += (mx - cx) * 0.2; cy += (my - cy) * 0.2; cursor.style.transform = `translate(${cx}px, ${cy}px)`; requestAnimationFrame(loop); };
-      root.classList.add('has-cursor'); loop();
+      // Скважина «смотрит» на мышь: свет за дверью и сама скважина смещаются (те же --tx/--ty, что у наклона телефона).
+      // Экономно: центр скважины считаем при смене размера, а не каждый кадр; переменные пишем, только пока они меняются
+      // (запись в корень пересчитывает стили страницы — иначе на слабом телефоне подтормаживает).
+      let tx = 0, ty = 0, kcx = 0, kcy = 0, wx = '', wy = '';
+      const keyEl = document.querySelector<HTMLElement>('.keyhole');
+      const measureKey = () => { if (!keyEl) return; const r = keyEl.getBoundingClientRect(); kcx = r.left + r.width / 2; kcy = r.top + r.height * 0.4; };
+      addEventListener('resize', () => setTimeout(measureKey, 200)); setTimeout(measureKey, 300);
+      const loop = () => {
+        if (Math.abs(mx - cx) + Math.abs(my - cy) > 0.3) { cx += (mx - cx) * 0.2; cy += (my - cy) * 0.2; cursor.style.transform = `translate(${cx}px, ${cy}px)`; }
+        if (keyEl && i === 0 && !playing && kcx) {
+          const gx = Math.max(-1, Math.min(1, (mx - kcx) / (innerWidth * 0.45)));
+          const gy = Math.max(-1, Math.min(1, (my - kcy) / (innerHeight * 0.45)));
+          tx += (gx - tx) * 0.06; ty += (gy - ty) * 0.06;
+          const nx = tx.toFixed(2), ny = ty.toFixed(2);
+          if (nx !== wx) { root.style.setProperty('--tx', nx); wx = nx; }
+          if (ny !== wy) { root.style.setProperty('--ty', ny); wy = ny; }
+        }
+        requestAnimationFrame(loop);
+      };
+      root.classList.add('has-cursor', 'tilt'); loop();
       document.querySelectorAll<HTMLElement>('[data-magnetic]').forEach((el) => {
         el.addEventListener('mousemove', (e) => {
           const r = el.getBoundingClientRect();

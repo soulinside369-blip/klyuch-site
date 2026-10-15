@@ -1,6 +1,7 @@
 ---
 // Панель портфолио в фирменных цветах клиента. Без логотипов: название набрано шрифтом сайта.
-// Иллюстрация — своя, по отрасли; цвета берёт из темы (CSS-переменные), классы: l — линия, f — бледная, a — акцент.
+// Внутри — мини-экран сайта клиента (окно браузера с силуэтом страницы в его цветах), в первом экране — своя иллюстрация отрасли.
+// Скриншотов и логотипов нет: только силуэт. Цвета — из темы (CSS-переменные), классы svg: l — линия, f — бледная, a — акцент.
 import type { Case } from '../data/site';
 interface Props { c: Case; i: number; }
 const { c, i } = Astro.props;
@@ -10,6 +11,11 @@ const style = `--pi:${i};--p-bg:${t.bg};--p-text:${t.text};--p-line:${t.line};--
 <article class={`panel${i === 0 ? ' open' : ''}${t.stripe ? ' striped' : ''}`} style={style} tabindex="0" aria-label={`${c.client} — ${c.work}, ${c.industry}`}>
   <div class="panel-top"><span class="panel-num">0{i + 1}</span><span class="panel-tag">{c.work}</span></div>
   <div class="panel-art" aria-hidden="true">
+    <div class="mock">
+      <div class="mock-bar"><i></i><i></i><i></i><span></span></div>
+      <div class="mock-view"><div class="mock-page">
+        <div class="mock-nav"><b></b><span></span><span></span><span></span></div>
+        <div class="mock-hero">
     <svg viewBox="0 0 400 250" fill="none" stroke-linecap="round" stroke-linejoin="round" preserveAspectRatio="xMidYMid meet">
       {c.art === 'realty' && (
         <g stroke-width="2">
@@ -55,6 +61,14 @@ const style = `--pi:${i};--p-bg:${t.bg};--p-text:${t.text};--p-line:${t.line};--
         </g>
       )}
     </svg>
+        </div>
+        <div class="mock-cta"><em></em><span></span></div>
+        <div class="mock-cards"><i></i><i></i><i></i></div>
+        <div class="mock-text"><span></span><span></span><span></span></div>
+        <div class="mock-cards two"><i></i><i></i></div>
+        <div class="mock-foot"></div>
+      </div></div>
+    </div>
   </div>
   <div class="panel-foot">
     <span class="panel-ind">{c.industry}</span>

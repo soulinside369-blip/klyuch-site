@@ -205,6 +205,7 @@ html.deck-on .counter{display:block}
 .counter b{color:var(--text);font-weight:400}
 .counter{transition:bottom .6s var(--ease),color .6s ease}
 html.deck-on[data-slide="0"] .counter{bottom:64px}  /* на первом слайде — над бегущей строкой, не на ней */
+@media(max-width:900px){html.deck-on .counter{display:none}}  /* на планшете счётчик ложился на подписи; там есть точки справа */
 @media(max-width:640px){html.deck-on .counter{display:none}html.deck-on .dots{display:none}html.deck-on .slide{padding-right:var(--pad)}html.deck-on .zoom{padding-right:var(--pad)}}
 
 /* =========================================================
@@ -301,6 +302,34 @@ html.deck-on .is-active .sh .ch{transform:none}
 .panel-art{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:8px 16px;opacity:.45;transform:scale(.9);transition:opacity .6s ease,transform .8s var(--ease)}
 .panel.open .panel-art{opacity:1;transform:none}
 .panel-art svg{width:100%;height:100%;max-height:100%}
+/* мини-экран сайта клиента: окно браузера, внутри — силуэт страницы; при раскрытии страница «листается» */
+.mock{width:min(100%,520px);height:100%;max-height:400px;display:flex;flex-direction:column;border:1px solid var(--p-line);border-radius:10px;overflow:hidden;
+  background:linear-gradient(var(--p-faint),var(--p-faint)) top/100% 26px no-repeat}
+.mock-bar{flex:none;display:flex;align-items:center;gap:5px;height:26px;padding:0 10px}
+.mock-bar i{width:7px;height:7px;border-radius:50%;background:var(--p-line);opacity:.8}
+.mock-bar span{flex:1;height:10px;margin-left:10px;max-width:46%;border-radius:999px;background:var(--p-faint)}
+.mock-view{flex:1;min-height:0;overflow:hidden;position:relative}
+.mock-page{display:flex;flex-direction:column;gap:9px;padding:10px 12px 14px;transition:transform 1.4s var(--ease)}
+.mock-nav{display:flex;align-items:center;gap:8px}
+.mock-nav b{width:22%;height:9px;border-radius:3px;background:var(--p-text);opacity:.85}
+.mock-nav span{width:9%;height:5px;border-radius:3px;background:var(--p-line);opacity:.7}
+.mock-nav span:first-of-type{margin-left:auto}
+.mock-hero{height:clamp(110px,24vh,210px);border:1px solid var(--p-faint);border-radius:7px;display:flex;align-items:center;justify-content:center;padding:6px}
+.mock-hero svg{width:100%;height:100%}
+.mock-cta{display:flex;align-items:center;gap:8px}
+.mock-cta em{width:26%;height:16px;border-radius:999px;background:var(--p-acc)}
+.mock-cta span{width:18%;height:16px;border-radius:999px;border:1px solid var(--p-line)}
+.mock-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.mock-cards.two{grid-template-columns:2fr 1fr}
+.mock-cards i{height:clamp(38px,8vh,70px);border-radius:6px;background:var(--p-faint)}
+.mock-text{display:flex;flex-direction:column;gap:6px}
+.mock-text span{height:6px;border-radius:3px;background:var(--p-line);opacity:.55}
+.mock-text span:nth-child(2){width:86%}.mock-text span:nth-child(3){width:62%}
+.mock-foot{height:30px;border-radius:6px;background:var(--p-text);opacity:.12}
+.panel.open .mock-page{animation:mock-scroll 9s var(--ease) 1.2s infinite}
+@keyframes mock-scroll{0%,18%{transform:none}48%,66%{transform:translateY(-38%)}96%,100%{transform:none}}
+.panel:not(.open) .mock{max-width:100%}
+.panel:not(.open) .mock-cards{grid-template-columns:1fr}.panel:not(.open) .mock-cards i:nth-child(n+2){display:none}
 .panel-foot{padding:0 20px 22px}
 .panel-ind{font:400 12px var(--mono);letter-spacing:1.5px;text-transform:uppercase;opacity:.75}
 .panel-name{margin:8px 0 0;font:700 clamp(18px,1.7vw,30px)/1.08 var(--display);letter-spacing:-.4px;transition:font-size .6s var(--ease)}
@@ -321,13 +350,14 @@ html.deck-on .is-active .sh .ch{transform:none}
 @keyframes ks-flow{to{stroke-dashoffset:-88}}
 @keyframes ks-pulse{0%{opacity:.9;transform:scale(.6)}100%{opacity:0;transform:scale(2.2)}}
 @keyframes ks-draw{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}
-@media(max-width:760px){
+@media(max-width:900px){  /* панели столбцом — и на планшете в портрете: в ряд на 768px имена клиентов не помещаются */
   .s-head p{display:none}
   .panels{flex-direction:column;height:auto;gap:8px}
   .panel{flex:none;height:62px;transition:height .7s var(--ease),filter .6s}
-  .panel.open{height:min(38vh,280px)}
+  .panel.open{height:min(40vh,420px)}
   .panel-top{display:none}
   .panel-art{position:absolute;inset:0 0 54px;padding:12px}
+  .mock-hero{height:78px}.mock-cards i{height:34px}
   .panel:not(.open) .panel-art{opacity:0}
   .panel-foot{margin-top:auto;padding:0 16px 16px;display:flex;align-items:baseline;justify-content:space-between;gap:12px}
   .panel-name,.panel.open .panel-name{font-size:18px;margin:0;order:-1}
@@ -438,7 +468,7 @@ html.deck-on,html.deck-on body{overscroll-behavior:none}
 html.deck-on .progress{display:block}
 .progress span{display:block;height:100%;background:var(--accent);transform-origin:left;transform:scaleX(.333);transition:transform 1.1s var(--zoom),background .6s}
 html.deck-on[data-slide="2"] .progress span{background:#111}
-.scroll-hint{position:fixed;left:50%;bottom:58px;z-index:41;transform:translateX(-50%);display:none;flex-direction:column;align-items:center;gap:8px;background:none;border:0;padding:6px 12px;cursor:pointer;color:var(--dim);font:400 11px var(--mono);letter-spacing:2px;text-transform:uppercase;transition:opacity .5s ease}
+.scroll-hint{position:fixed;left:50%;bottom:58px;z-index:41;transform:translateX(-50%);display:none;flex-direction:column;align-items:center;gap:8px;background:none;border:0;padding:6px 12px;cursor:pointer;color:var(--dim);font:400 11px var(--mono);letter-spacing:2px;text-transform:uppercase;white-space:nowrap;transition:opacity .5s ease}
 html.deck-on .scroll-hint{display:flex}
 html.deck-on:not([data-slide="0"]) .scroll-hint,html.hint-used .scroll-hint,html.trailer-on .scroll-hint{opacity:0;pointer-events:none}
 .hint-mouse{width:22px;height:34px;border:1.5px solid var(--line-3);border-radius:12px;position:relative}
@@ -460,7 +490,12 @@ html.armed .progress span{background:var(--accent-hi)}
 html.tilt .keyhole svg{translate:calc(var(--tx,0) * 10px) calc(var(--ty,0) * 8px)}
 html.tilt .s-start::before{translate:calc(var(--tx,0) * 46px) calc(var(--ty,0) * 36px)}
 html.tilt .hero-bg::before{translate:calc(var(--tx,0) * -10px) calc(var(--ty,0) * -10px)}
-html.tilt .s-work::after{background-position:calc(var(--tx,0) * 30px) calc(var(--ty,0) * 30px)}
+html.tilt .s-work::after{translate:calc(var(--tx,0) * -22px) calc(var(--ty,0) * -16px)}  /* свет за дверью — в противофазе: глубина */
+/* наведение на скважину: она приближается, за дверью светлее — «заглядываем» */
+.keyhole svg{transition:scale .6s var(--soft)}
+.keyhole:hover svg{scale:1.06}
+html.deck-on .deck:has(.keyhole:hover) .s-work{filter:brightness(.9) saturate(1)}
+html.deck-on .deck:has(.keyhole:hover) .s-start::before{background:radial-gradient(circle,rgba(232,176,75,.3),transparent 62%)}
 html.tilt .panel.open .panel-art svg{translate:calc(var(--tx,0) * 8px) calc(var(--ty,0) * 6px)}
 @media(pointer:coarse){.hero-bg::after{-webkit-mask:radial-gradient(150px circle at var(--mx) var(--my),#000 0%,transparent 70%);mask:radial-gradient(150px circle at var(--mx) var(--my),#000 0%,transparent 70%)}}
 
