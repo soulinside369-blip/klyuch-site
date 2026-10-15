@@ -25,6 +25,7 @@ const isIOS = !!nav && (/iP(hone|ad|od)/.test(nav.userAgent) || (nav.platform ==
 const reduced = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 let iosLabel: HTMLLabelElement | null = null;
+let iosInput: HTMLInputElement | null = null;
 function iosHaptic() {
   if (!iosLabel) {
     const hide = 'position:fixed;left:-99px;top:0;width:1px;height:1px;opacity:0;pointer-events:none';
@@ -33,9 +34,12 @@ function iosHaptic() {
     input.setAttribute('aria-hidden', 'true'); input.style.cssText = hide;
     const label = document.createElement('label');
     label.htmlFor = 'ks-haptic'; label.setAttribute('aria-hidden', 'true'); label.style.cssText = hide;
-    document.body.append(input, label); iosLabel = label;
+    // Safari ставит фокус на переключатель после нажатия на label — сайт считал, что человек печатает, и блокировал свайп.
+    input.addEventListener('focus', () => input.blur());
+    document.body.append(input, label); iosLabel = label; iosInput = input;
   }
   iosLabel.click();
+  if (document.activeElement === iosInput) iosInput!.blur();
 }
 
 export function haptic(name: Feel) {

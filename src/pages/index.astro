@@ -98,7 +98,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
     <!-- скважина: над портфолио, пока мы на первом слайде -->
     <button class="keyhole" type="button" data-go="1" aria-label="Загляните внутрь — портфолио">
       <svg viewBox="0 0 100 100" fill="none" aria-hidden="true"><path d={keyholePath} stroke="#E8B04B" stroke-width="1.2" vector-effect="non-scaling-stroke"/></svg>
-      <span class="keyhole-label">Загляните внутрь ↓</span>
+      <span class="keyhole-label"><span class="kl-d">Загляните внутрь ↓</span><span class="kl-m">Открыть кейсы</span></span>
     </button>
 
     <!-- 3. КОНТАКТЫ (шторка) -->
@@ -138,7 +138,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
   <button class="scroll-hint" type="button" data-go="1" aria-label="Следующий экран">
     <span class="hint-mouse" aria-hidden="true"><i></i></span>
     <span class="hint-finger" aria-hidden="true"><svg viewBox="0 0 24 40" fill="none"><rect x="1" y="1" width="22" height="38" rx="11" stroke="currentColor" stroke-width="1.5" opacity=".35"/><circle cx="12" cy="28" r="5" fill="currentColor"/></svg></span>
-    <span class="hint-text"><span class="hint-desk">Листайте</span><span class="hint-touch">Свайп вверх</span></span>
+    <span class="hint-text"><span class="hint-desk">Листайте</span><span class="hint-touch">Свайп вверх — кейсы</span></span>
   </button>
 
   <script>
@@ -191,19 +191,22 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
       if (worst < MIN_FIT) slides.forEach((s) => s.querySelector<HTMLElement>('.slide-inner')!.style.removeProperty('zoom'));
       return worst >= MIN_FIT;
     };
-    const typing = () => { const a = document.activeElement; return !!a && /INPUT|TEXTAREA|SELECT/.test(a.tagName); };
+    // «Печатает» — только текстовые поля. Чекбоксы (в т.ч. скрытый переключатель вибрации iOS) — не в счёт.
+    const typing = () => { const a = document.activeElement; return !!a && a.matches('input:not([type=checkbox]):not([type=radio]):not([type=submit]):not([type=button]), textarea, select'); };
     // Телефон: скважина встаёт в свободное место между шапкой и текстом (текст прижат к низу и его высота разная),
     // иначе она ложится поверх заголовка. Те же --kx/--ky/--ks использует маска перехода и растворение трейлера.
     const placeKey = () => {
       const st = root.style;
       if (innerWidth > 900 || !on) { ['--kx', '--ky', '--ks'].forEach((p) => st.removeProperty(p)); root.classList.remove('no-key'); return; }
+      root.classList.remove('no-key');                                // со скважиной подсказка свайпа не нужна → текст ниже, места больше
       const barB = document.querySelector('.bar')!.getBoundingClientRect().bottom;
       const heroT = document.querySelector('.s-start .slide-inner')!.getBoundingClientRect().top;
-      const room = heroT - barB - 12;
-      const k = Math.max(64, Math.min(170, innerWidth * 0.42, room * 0.95));
-      root.classList.toggle('no-key', room < 64);
+      const room = heroT - barB - 12, LABEL = 40;                     // под скважиной — кнопка-подпись «Открыть кейсы»
+      const k = Math.max(64, Math.min(170, innerWidth * 0.42, (room - LABEL) * 0.95));
+      root.classList.toggle('no-key', room - LABEL < 64);
+      const top = barB + 6 + (room - k - LABEL) / 2;
       st.setProperty('--ks', `${k}px`); st.setProperty('--kx', `${innerWidth / 2}px`);
-      st.setProperty('--ky', `${barB + 6 + (room - k) / 2 + k * 0.4}px`);
+      st.setProperty('--ky', `${top + k * 0.4}px`);
     };
     function apply() {
       if (typing()) return;
@@ -399,16 +402,8 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
       };
       type DOE = typeof DeviceOrientationEvent & { requestPermission?: () => Promise<string> };
       const DO = (window as unknown as { DeviceOrientationEvent?: DOE }).DeviceOrientationEvent;
-      if (DO && typeof DO.requestPermission === 'function') {
-        // iOS: разрешение на датчик движения — только в ответ на касание; спрашиваем один раз.
-        addEventListener('touchend', () => {
-          try { if (localStorage.getItem('ks_tilt') === 'no') return; } catch {}
-          DO.requestPermission!().then((r) => {
-            if (r === 'granted') addEventListener('deviceorientation', onTilt);
-            else try { localStorage.setItem('ks_tilt', 'no'); } catch {}
-          }).catch(() => {});
-        }, { once: true });
-      } else if (DO) addEventListener('deviceorientation', onTilt);
+      // iOS требует разрешение на датчик движения — системное окно мешало (видео владельца 15.10). На iOS наклон не используем.
+      if (DO && typeof DO.requestPermission !== 'function') addEventListener('deviceorientation', onTilt);
     }
 
     /* ---------- заявка ---------- */
