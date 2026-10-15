@@ -34,16 +34,16 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
   <div class="trailer" id="trailer" aria-hidden="true">
     <div class="tr-line"></div>
     <!-- тайминги от старта (после загрузки шрифта): --t вход, --t2 уход, --st шаг волны по буквам -->
-    {trailer.cuts.map((w, k) => <p class={`tr tr-cut tr-cut-${k % 3} has-out`} style={`--t:${(0.25 + k * 0.29).toFixed(2)}s;--t2:${(0.25 + k * 0.29 + 0.2).toFixed(2)}s;--st:14ms;--st2:8ms;--di:.3s;--do:.22s`}><Split text={w} /></p>)}
+    {trailer.cuts.map((w, k) => <p class={`tr tr-cut tr-cut-${k % 3} has-out`} style={`--t:${(0.3 + k * trailer.step).toFixed(2)}s;--t2:${(0.3 + k * trailer.step + trailer.step * 0.7).toFixed(2)}s;--st:14ms;--st2:8ms;--di:.3s;--do:.2s`}><Split text={w} /></p>)}
     <div class="tr-progress"></div>
-    <p class="tr tr-c tr-soft" style="--t:1.85s;--st:16ms;--di:.6s"><Split text={trailer.proof} /></p>
+    <p class="tr tr-c tr-soft" style="--t:3.7s;--st:16ms;--di:.6s"><Split text={trailer.proof} /></p>
     <div class="tr-key">
       <svg viewBox="0 0 300 120" fill="none" aria-hidden="true">
         <circle class="tr-draw" pathLength="1" cx="60" cy="60" r="40" stroke="#E8B04B" stroke-width="3"/>
         <circle cx="60" cy="60" r="12" stroke="#3A3E45" stroke-width="3"/>
         <path class="tr-draw" pathLength="1" d="M100 60H290M262 60v32M240 60v20M218 60v12" stroke="#E8B04B" stroke-width="3"/>
       </svg>
-      <span class="tr-word" style="--t:2.35s;--st:80ms;--di:.75s"><Split text={brand.name} /></span>
+      <span class="tr-word" style="--t:5.6s;--st:80ms;--di:.75s"><Split text={brand.name} /></span>
     </div>
     <button class="tr-skip" type="button" id="tr-skip">Пропустить ›</button>
   </div>
@@ -112,7 +112,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
             <a href={`mailto:${brand.email}`} class="mid-link">{brand.email}</a>
           </div>
         </div>
-        <form class="form js-lead reveal" action={`${B}api/send.php`} method="post">
+        <form class="form js-lead reveal" action={`${B}api/send.php`} method="post" novalidate data-tg={brand.telegram}>
           <div class="form-title">Или оставьте контакт — перезвоним</div>
           <div class="field"><input id="f-name" name="name" type="text" autocomplete="name" required minlength="2" placeholder=" "><label for="f-name">Как вас зовут</label><span class="field-msg">Минимум 2 буквы</span></div>
           <div class="field"><input id="f-contact" name="contact" type="text" autocomplete="tel" required pattern="^(\+?[0-9][0-9\s()\-]{9,}|@?[A-Za-z0-9_]{5,})$" placeholder=" "><label for="f-contact">Телефон или @telegram</label><span class="field-msg">Номер телефона или ник в Telegram</span></div>
@@ -160,7 +160,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
     if (playing) {
       // Старт после загрузки шрифта (не дольше 700 мс), чтобы буквы не «прыгали» с системного шрифта.
       let tm = 0;
-      const begin = () => { if (root.classList.contains('tr-go')) return; root.classList.add('tr-go'); tm = window.setTimeout(endTrailer, 3600); };
+      const begin = () => { if (root.classList.contains('tr-go')) return; root.classList.add('tr-go'); tm = window.setTimeout(endTrailer, 7200); };
       Promise.race([document.fonts?.ready, new Promise((r) => setTimeout(r, 700))]).then(begin);
       const skip = () => { clearTimeout(tm); endTrailer(); };
       document.getElementById('tr-skip')!.addEventListener('click', skip);
@@ -308,8 +308,9 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
         mx = e.clientX; my = e.clientY;
         root.style.setProperty('--mx', `${mx}px`); root.style.setProperty('--my', `${my}px`);
         const h = (e.target as HTMLElement).closest('a,button,.panel,label,input');
-        cursor.classList.toggle('hover', !!h);
+        cursor.classList.toggle('hover', !!h); cursor.classList.remove('away');
       });
+      document.addEventListener('mouseleave', () => cursor.classList.add('away'));
       const loop = () => { cx += (mx - cx) * 0.2; cy += (my - cy) * 0.2; cursor.style.transform = `translate(${cx}px, ${cy}px)`; requestAnimationFrame(loop); };
       root.classList.add('has-cursor'); loop();
       document.querySelectorAll<HTMLElement>('[data-magnetic]').forEach((el) => {
@@ -377,9 +378,32 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
     try { if (new URLSearchParams(location.search).get('utm_source')) sessionStorage.setItem('ks_utm', location.search); } catch {}
     document.querySelectorAll<HTMLFormElement>('form.js-lead').forEach((form) => {
       const status = form.querySelector<HTMLElement>('.form-status');
-      form.addEventListener('invalid', () => { if (!form.dataset.buzzed) { form.dataset.buzzed = '1'; feel('error'); setTimeout(() => delete form.dataset.buzzed, 400); } }, true);
+      // Проверка своя (novalidate): системные подсказки браузера говорят на языке браузера и выглядят чужеродно.
+      const inputs = [...form.querySelectorAll<HTMLInputElement>('.field input')];
+      const consent = form.querySelector<HTMLInputElement>('input[name="consent"]');
+      const mark = (el: HTMLInputElement) => { const bad = !el.checkValidity();
+        const msg = el.parentElement?.querySelector<HTMLElement>('.field-msg');
+        if (msg) { msg.dataset.hint ??= msg.textContent || ''; msg.textContent = el.value.trim() ? msg.dataset.hint : 'Заполните поле'; }
+        (el.type === 'checkbox' ? el.closest('.consent')! : el).classList.toggle('bad', bad); return !bad; };
+      inputs.forEach((el) => {
+        el.addEventListener('blur', () => { if (el.value) mark(el); });
+        el.addEventListener('input', () => { if (el.classList.contains('bad')) mark(el); });
+      });
+      consent?.addEventListener('change', () => mark(consent));
+      const showFallback = () => {
+        if (!status) return;
+        const tg = form.dataset.tg || '';
+        status.innerHTML = 'Это демо-версия сайта — заявки здесь не принимаются. ' + (tg.length > 13 ? `<a href="${tg}" rel="noopener">Напишите нам в Telegram ↗</a>` : 'Контакты появятся при запуске.');
+      };
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
+        const bad = [...inputs, ...(consent ? [consent] : [])].filter((el) => !mark(el));
+        if (bad.length) {
+          feel('error');
+          if (status) status.textContent = bad[0] === consent ? 'Отметьте согласие на обработку данных.' : 'Проверьте выделенные поля.';
+          bad[0].focus({ preventScroll: true });
+          return;
+        }
         const btn = form.querySelector<HTMLButtonElement>('button[type="submit"]');
         if (btn) btn.disabled = true;
         if (status) status.textContent = 'Отправляем…';
@@ -388,6 +412,8 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
         try { fd.append('utm', sessionStorage.getItem('ks_utm') || ''); } catch {}
         try {
           const r = await fetch(form.action, { method: 'POST', body: fd });
+          // Нет PHP (GitHub Pages, статичный хостинг): сервер отдаёт 404/405 или сам файл вместо JSON.
+          if ([404, 405, 501].includes(r.status) || !(r.headers.get('content-type') || '').includes('json')) { showFallback(); if (btn) btn.disabled = false; return; }
           const j = await r.json().catch(() => ({}));
           if (r.ok && j.ok) { feel('success'); await new Promise((ok) => setTimeout(ok, 350)); const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/'; location.href = base + 'thanks/'; return; }
           feel('error'); if (status) status.textContent = 'Не удалось отправить. Напишите нам в Telegram или позвоните.';
