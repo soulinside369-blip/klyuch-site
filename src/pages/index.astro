@@ -53,7 +53,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
       <div class="slide-inner hero">
         <div class="kicker reveal">{hero.kicker}</div>
         <h1>
-          <Split text={hero.titleStart} class="h1-a" />
+          <span class="echo-wrap"><Split text={hero.titleStart} class="h1-a" /><span class="echo" aria-hidden="true">{hero.titleStart}</span></span>
           <span class="rot" aria-hidden="true">{hero.rotating.map((w, k) => <span class={`rw${k === 0 ? ' on' : ''}`}><Split text={w} /></span>)}</span>
           <span class="sr-only">{hero.rotating.join(' ')}</span>
         </h1>
@@ -73,6 +73,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
     <section class="slide s-work" id="work" aria-label="Портфолио">
       <div class="zoom">
         <div class="slide-inner">
+          <span class="ghost-num" aria-hidden="true">02</span>
           <div class="s-head">
             <div><div class="kicker reveal">02 / Портфолио</div><h2><Split text="Нам доверяют лидеры рынков" class="sh" /></h2></div>
             <p class="reveal">Проекты от {hero.range.from} до {hero.range.to}. Здесь — четыре из многих.</p>
@@ -92,6 +93,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
     <section class="slide s-contact" id="contact" aria-label="Контакты">
       <div class="slide-inner contact">
         <div class="contact-main">
+          <span class="ghost-num" aria-hidden="true">03</span>
           <div class="kicker reveal">03 / Контакты</div>
           <h2><span class="ln"><Split text={contact.titleA} class="sh" /></span><span class="ln acc"><Split text={contact.titleB} class="sh" start={contact.titleA.length} /></span></h2>
           <p class="lead reveal">{contact.lead}</p>
@@ -103,8 +105,8 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
         </div>
         <form class="form js-lead reveal" action={`${B}api/send.php`} method="post">
           <div class="form-title">Или оставьте контакт — перезвоним</div>
-          <div class="field"><label for="f-name">Имя</label><input id="f-name" name="name" type="text" autocomplete="name" required></div>
-          <div class="field"><label for="f-contact">Телефон или Telegram</label><input id="f-contact" name="contact" type="text" autocomplete="tel" required></div>
+          <div class="field"><input id="f-name" name="name" type="text" autocomplete="name" required minlength="2" placeholder=" "><label for="f-name">Как вас зовут</label><span class="field-msg">Минимум 2 буквы</span></div>
+          <div class="field"><input id="f-contact" name="contact" type="text" autocomplete="tel" required pattern="^(\+?[0-9][0-9\s()\-]{9,}|@?[A-Za-z0-9_]{5,})$" placeholder=" "><label for="f-contact">Телефон или @telegram</label><span class="field-msg">Номер телефона или ник в Telegram</span></div>
           <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
           <label class="consent"><input type="checkbox" name="consent" value="1" required><span>Даю <a href={`${B}privacy/#consent`}>согласие на обработку персональных данных</a></span></label>
           <button type="submit" class="btn btn-primary" data-magnetic>Жду звонка</button>
