@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.astro/
+public/api/config.php
+.env
+# внутренние рабочие материалы — не публикуются
+_archive/
+docs/
+CLAUDE.md

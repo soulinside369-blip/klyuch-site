@@ -1,0 +1,262 @@
+---
+// Главная = вся витрина. Трейлер-заставка → 3 полноэкранных слайда, листаются как презентация.
+// Переход 1→2 — «сквозь замочную скважину» (CSS mask), 2→3 — шторка (clip-path).
+// Дека включается, только если каждый слайд помещается в экран; иначе — обычная прокрутка.
+import Base from '../layouts/Base.astro';
+import CasePanel from '../components/CasePanel.astro';
+import Split from '../components/Split.astro';
+import { brand, hero, trailer, publishedCases, contact } from '../data/site';
+const slides = [{ id: 'start', label: 'Старт' }, { id: 'work', label: 'Портфолио' }, { id: 'contact', label: 'Контакты' }];
+const keyholePath = 'M43.5 56.8A18 18 0 1 1 56.5 56.8L63 86H37Z';
+const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/';
+---
+<Base
+  title="КЛЮЧ — IT-агентство полного цикла: приложения, сайты, реклама, автоматизация"
+  description="Открываем рост бизнеса: приложения, сайты, реклама и автоматизация. Проекты от 30 тыс. до 25 млн ₽. Работали для Циан, Toshiba, Сбербанка, ХК «Спартак»."
+>
+  <Fragment slot="head">
+  <script is:inline>
+      // До отрисовки: трейлер — один раз за визит и не при «уменьшить движение»; ?intro — показать принудительно.
+      (function () {
+        var d = document.documentElement, show = true;
+        try { show = !sessionStorage.getItem('ks_trailer') || /[?&]intro/.test(location.search); } catch (e) {}
+        if (matchMedia('(prefers-reduced-motion: reduce)').matches || location.hash) show = false;
+        d.classList.add(show ? 'trailer-on' : 'trailer-off');
+      })();
+    </script>
+  </Fragment>
+
+  <!-- ТРЕЙЛЕР -->
+  <div class="trailer" id="trailer" aria-hidden="true">
+    <div class="tr-line"></div>
+    <!-- тайминги: --t вход, --t2 уход, --st шаг волны по буквам -->
+    <p class="tr tr-a has-out" style="--t:.35s;--t2:1.45s;--st:26ms"><Split text={trailer.open[0]} /></p>
+    <p class="tr tr-b has-out" style="--t:1.55s;--t2:2.25s;--st:30ms"><Split text={trailer.open[1]} /></p>
+    {trailer.cuts.map((w, k) => <p class={`tr tr-cut tr-cut-${k % 3} has-out`} style={`--t:${(2.4 + k * 0.38).toFixed(2)}s;--t2:${(2.4 + k * 0.38 + 0.26).toFixed(2)}s;--st:16ms;--st2:10ms;--di:.36s;--do:.24s`}><Split text={w} /></p>)}
+    <div class="tr-progress"></div>
+    <p class="tr tr-c" style="--t:4.35s;--st:22ms"><Split text={trailer.close} /></p>
+    <div class="tr-key">
+      <svg viewBox="0 0 300 120" fill="none" aria-hidden="true">
+        <circle class="tr-draw" pathLength="1" cx="60" cy="60" r="40" stroke="#E8B04B" stroke-width="3"/>
+        <circle cx="60" cy="60" r="12" stroke="#3A3E45" stroke-width="3"/>
+        <path class="tr-draw" pathLength="1" d="M100 60H290M262 60v32M240 60v20M218 60v12" stroke="#E8B04B" stroke-width="3"/>
+      </svg>
+      <span class="tr-word" style="--t:4.9s;--st:110ms;--di:.9s"><Split text={brand.name} /></span>
+    </div>
+    <button class="tr-skip" type="button" id="tr-skip">Пропустить ›</button>
+  </div>
+
+  <main class="deck" id="deck" data-i="0">
+    <!-- 1. СТАРТ -->
+    <section class="slide s-start" id="start" aria-label="Старт">
+      <div class="hero-bg" aria-hidden="true"></div>
+      <div class="slide-inner hero">
+        <div class="kicker reveal">{hero.kicker}</div>
+        <h1>
+          <Split text={hero.titleStart} class="h1-a" />
+          <span class="rot" aria-hidden="true">{hero.rotating.map((w, k) => <span class={`rw${k === 0 ? ' on' : ''}`}><Split text={w} /></span>)}</span>
+          <span class="sr-only">{hero.rotating.join(' ')}</span>
+        </h1>
+        <p class="lead reveal">{hero.lead}</p>
+        <div class="actions reveal">
+          <a href="#contact" class="btn btn-primary" data-go="2" data-magnetic>Обсудить задачу</a>
+          <a href="#work" class="btn btn-ghost" data-go="1" data-magnetic>Портфолио</a>
+        </div>
+        <div class="range reveal"><span>от <b>{hero.range.from}</b></span><span class="range-line" aria-hidden="true"></span><span>до <b>{hero.range.to}</b></span></div>
+      </div>
+      <div class="marquee" aria-hidden="true"><div class="marquee-track">
+        {[0, 1].map(() => hero.directions.map((d) => <span>{d}</span>))}
+      </div></div>
+    </section>
+
+    <!-- 2. ПОРТФОЛИО (раскрывается сквозь скважину) -->
+    <section class="slide s-work" id="work" aria-label="Портфолио">
+      <div class="zoom">
+        <div class="slide-inner">
+          <div class="s-head">
+            <div><div class="kicker reveal">02 / Портфолио</div><h2><Split text="Нам доверяют лидеры рынков" class="sh" /></h2></div>
+            <p class="reveal">Проекты от {hero.range.from} до {hero.range.to}. Здесь — четыре из многих.</p>
+          </div>
+          <div class="panels reveal" id="panels">{publishedCases.map((c, i) => <CasePanel c={c} i={i} />)}</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- скважина: над портфолио, пока мы на первом слайде -->
+    <button class="keyhole" type="button" data-go="1" aria-label="Заглянуть в портфолио">
+      <svg viewBox="0 0 100 100" fill="none" aria-hidden="true"><path d={keyholePath} stroke="#E8B04B" stroke-width="1.2" vector-effect="non-scaling-stroke"/></svg>
+      <span class="keyhole-label">Загляните внутрь ↓</span>
+    </button>
+
+    <!-- 3. КОНТАКТЫ (шторка) -->
+    <section class="slide s-contact" id="contact" aria-label="Контакты">
+      <div class="slide-inner contact">
+        <div class="contact-main">
+          <div class="kicker reveal">03 / Контакты</div>
+          <h2><span class="ln"><Split text={contact.titleA} class="sh" /></span><span class="ln acc"><Split text={contact.titleB} class="sh" start={contact.titleA.length} /></span></h2>
+          <p class="lead reveal">{contact.lead}</p>
+          <div class="big-links reveal">
+            <a href={brand.telegram} rel="noopener" class="big-link" data-magnetic>Telegram <i>↗</i></a>
+            <a href={brand.phoneHref} class="mid-link">{brand.phone}</a>
+            <a href={`mailto:${brand.email}`} class="mid-link">{brand.email}</a>
+          </div>
+        </div>
+        <form class="form js-lead reveal" action={`${B}api/send.php`} method="post">
+          <div class="form-title">Или оставьте контакт — перезвоним</div>
+          <div class="field"><label for="f-name">Имя</label><input id="f-name" name="name" type="text" autocomplete="name" required></div>
+          <div class="field"><label for="f-contact">Телефон или Telegram</label><input id="f-contact" name="contact" type="text" autocomplete="tel" required></div>
+          <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <label class="consent"><input type="checkbox" name="consent" value="1" required><span>Даю <a href={`${B}privacy/#consent`}>согласие на обработку персональных данных</a></span></label>
+          <button type="submit" class="btn btn-primary" data-magnetic>Жду звонка</button>
+          <div class="form-status" role="status" aria-live="polite"></div>
+        </form>
+      </div>
+      <div class="legal">© {new Date().getFullYear()} {brand.name} · {brand.legal} · <a href={`${B}privacy/`}>Политика ПДн</a></div>
+    </section>
+  </main>
+
+  <nav class="dots" aria-label="Слайды">
+    {slides.map((s, i) => <button class="dot" type="button" data-go={i} aria-current={i === 0 ? 'true' : 'false'}><span>{s.label}</span></button>)}
+  </nav>
+  <div class="counter" aria-hidden="true"><b id="cur">01</b> / 0{slides.length}</div>
+  <div class="cursor" aria-hidden="true"></div>
+
+  <script>
+    const root = document.documentElement;
+    const deck = document.getElementById('deck')!;
+    const slides = [...document.querySelectorAll<HTMLElement>('.slide')];
+    const dots = [...document.querySelectorAll<HTMLButtonElement>('.dot')];
+    const cur = document.getElementById('cur')!;
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let i = 0, lock = false, on = false, playing = root.classList.contains('trailer-on');
+
+    /* ---------- трейлер ---------- */
+    const trailerEl = document.getElementById('trailer')!;
+    const endTrailer = () => {
+      if (!playing) return; playing = false;
+      try { sessionStorage.setItem('ks_trailer', '1'); } catch {}
+      root.classList.add('trailer-out');
+      setTimeout(() => { root.classList.remove('trailer-on', 'trailer-out'); root.classList.add('trailer-off'); trailerEl.remove(); }, 1100);
+      startRotator(); setTimeout(() => root.classList.add('hero-in'), 250);
+    };
+    if (playing) {
+      const tm = setTimeout(endTrailer, 6500);
+      const skip = () => { clearTimeout(tm); endTrailer(); };
+      document.getElementById('tr-skip')!.addEventListener('click', skip);
+      trailerEl.addEventListener('click', skip);
+      window.addEventListener('keydown', (e) => { if (playing && (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); skip(); } });
+    } else { trailerEl.remove(); }
+
+    /* ---------- дека ---------- */
+    const fits = () => slides.every((s) => {
+      const inner = s.querySelector<HTMLElement>('.slide-inner')!;
+      const cs = getComputedStyle(s);
+      return inner.scrollHeight + parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom) <= window.innerHeight + 1;
+    });
+    const typing = () => { const a = document.activeElement; return !!a && /INPUT|TEXTAREA|SELECT/.test(a.tagName); };
+    function apply() {
+      if (typing()) return;
+      root.classList.remove('deck-on');
+      on = fits();
+      root.classList.toggle('deck-on', on);
+      go(i, true);
+    }
+    function go(n: number, instant = false) {
+      i = Math.max(0, Math.min(slides.length - 1, n));
+      if (!on) { slides.forEach((s) => { s.classList.add('is-active'); s.removeAttribute('inert'); }); if (!instant) slides[i].scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' }); return; }
+      if (instant) { root.classList.add('no-anim'); requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('no-anim'))); }
+      deck.dataset.i = String(i); root.dataset.slide = String(i);
+      slides.forEach((s, k) => { s.classList.toggle('is-active', k === i); s.toggleAttribute('inert', k !== i); });
+      dots.forEach((d, k) => d.setAttribute('aria-current', String(k === i)));
+      cur.textContent = String(i + 1).padStart(2, '0');
+      history.replaceState(null, '', i ? `#${slides[i].id}` : location.pathname + location.search);
+    }
+    const step = (d: number) => {
+      if (!on || lock || playing || typing()) return;
+      const n = i + d; if (n < 0 || n >= slides.length) return;
+      lock = true; go(n); setTimeout(() => (lock = false), 1250);
+    };
+    window.addEventListener('wheel', (e) => { if (on) { e.preventDefault(); if (Math.abs(e.deltaY) > 12) step(e.deltaY > 0 ? 1 : -1); } }, { passive: false });
+    window.addEventListener('keydown', (e) => {
+      if (!on || playing || typing()) return;
+      if (['ArrowDown', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); step(1); }
+      if (['ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); step(-1); }
+    });
+    let y0: number | null = null;
+    window.addEventListener('touchstart', (e) => { y0 = e.touches[0].clientY; }, { passive: true });
+    window.addEventListener('touchend', (e) => {
+      if (y0 === null) return; const dy = y0 - e.changedTouches[0].clientY; y0 = null;
+      if (Math.abs(dy) > 50) step(dy > 0 ? 1 : -1);
+    }, { passive: true });
+    document.querySelectorAll<HTMLElement>('[data-go]').forEach((el) => el.addEventListener('click', (e) => {
+      e.preventDefault(); if (playing) return; lock = true; go(Number(el.dataset.go)); setTimeout(() => (lock = false), 1250);
+    }));
+    const start = slides.findIndex((s) => `#${s.id}` === location.hash);
+    if (start > 0) i = start;
+    let t: number; window.addEventListener('resize', () => { clearTimeout(t); t = window.setTimeout(apply, 150); });
+    apply(); document.fonts?.ready.then(apply);
+
+    /* ---------- меняющееся слово ---------- */
+    let rotStarted = false;
+    function startRotator() {
+      if (rotStarted || reduce) return; rotStarted = true;
+      const words = [...document.querySelectorAll<HTMLElement>('.rot .rw')];
+      let k = 0;
+      setInterval(() => {
+        if (document.hidden) return;
+        words[k].classList.remove('on'); words[k].classList.add('off');
+        const prev = words[k]; setTimeout(() => prev.classList.remove('off'), 900);
+        k = (k + 1) % words.length; words[k].classList.add('on');
+      }, 2400);
+    }
+    if (!playing) { startRotator(); root.classList.add('hero-in'); }
+
+    /* ---------- портфолио: раскрывающиеся панели ---------- */
+    const panels = [...document.querySelectorAll<HTMLElement>('.panel')];
+    const openPanel = (p: HTMLElement) => panels.forEach((x) => x.classList.toggle('open', x === p));
+    panels.forEach((p) => { p.addEventListener('mouseenter', () => openPanel(p)); p.addEventListener('focus', () => openPanel(p)); p.addEventListener('click', () => openPanel(p)); });
+
+    /* ---------- фонарик, курсор, магнитные кнопки (только мышь) ---------- */
+    if (matchMedia('(pointer: fine)').matches && !reduce) {
+      const cursor = document.querySelector<HTMLElement>('.cursor')!;
+      let mx = innerWidth / 2, my = innerHeight / 2, cx = mx, cy = my;
+      window.addEventListener('mousemove', (e) => {
+        mx = e.clientX; my = e.clientY;
+        root.style.setProperty('--mx', `${mx}px`); root.style.setProperty('--my', `${my}px`);
+        const h = (e.target as HTMLElement).closest('a,button,.panel,label,input');
+        cursor.classList.toggle('hover', !!h);
+      });
+      const loop = () => { cx += (mx - cx) * 0.2; cy += (my - cy) * 0.2; cursor.style.transform = `translate(${cx}px, ${cy}px)`; requestAnimationFrame(loop); };
+      root.classList.add('has-cursor'); loop();
+      document.querySelectorAll<HTMLElement>('[data-magnetic]').forEach((el) => {
+        el.addEventListener('mousemove', (e) => {
+          const r = el.getBoundingClientRect();
+          el.style.transform = `translate(${(e.clientX - r.left - r.width / 2) * 0.18}px, ${(e.clientY - r.top - r.height / 2) * 0.3}px)`;
+        });
+        el.addEventListener('mouseleave', () => (el.style.transform = ''));
+      });
+    }
+
+    /* ---------- заявка ---------- */
+    try { if (new URLSearchParams(location.search).get('utm_source')) sessionStorage.setItem('ks_utm', location.search); } catch {}
+    document.querySelectorAll<HTMLFormElement>('form.js-lead').forEach((form) => {
+      const status = form.querySelector<HTMLElement>('.form-status');
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+        if (btn) btn.disabled = true;
+        if (status) status.textContent = 'Отправляем…';
+        const fd = new FormData(form);
+        fd.append('page', location.pathname);
+        try { fd.append('utm', sessionStorage.getItem('ks_utm') || ''); } catch {}
+        try {
+          const r = await fetch(form.action, { method: 'POST', body: fd });
+          const j = await r.json().catch(() => ({}));
+          if (r.ok && j.ok) { const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/'; location.href = base + 'thanks/'; return; }
+          if (status) status.textContent = 'Не удалось отправить. Напишите нам в Telegram или позвоните.';
+        } catch { if (status) status.textContent = 'Нет связи. Напишите нам в Telegram или позвоните.'; }
+        if (btn) btn.disabled = false;
+      });
+    });
+  </script>
+</Base>

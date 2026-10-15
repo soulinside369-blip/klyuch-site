@@ -1,0 +1,55 @@
+---
+import '@fontsource/unbounded/500.css';
+import '@fontsource/unbounded/700.css';
+import '@fontsource/manrope/400.css';
+import '@fontsource/manrope/600.css';
+import '@fontsource/manrope/700.css';
+import '@fontsource/jetbrains-mono/400.css';
+import '../styles/global.css';
+import { brand } from '../data/site';
+
+interface Props { title: string; description: string; noindex?: boolean; schema?: Record<string, unknown>[]; }
+const { title, description, noindex = false, schema = [] } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site).href;
+const org = {
+  '@context': 'https://schema.org', '@type': 'ProfessionalService', name: brand.name, url: Astro.site?.href,
+  priceRange: '30000 ₽ – 25000000 ₽', areaServed: 'RU',
+  knowsAbout: ['Разработка мобильных приложений', 'Разработка сайтов', 'Контекстная реклама', 'Маркетинг', 'Автоматизация бизнеса', 'IT-консалтинг'],
+};
+const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/';
+---
+<!doctype html>
+<html lang="ru" style="background:#0B0C0E">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{title}</title>
+  <meta name="description" content={description}>
+  <link rel="canonical" href={canonical}>
+  {noindex && <meta name="robots" content="noindex">}
+  <meta name="theme-color" content="#0B0C0E">
+  <meta name="color-scheme" content="dark">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content={title}>
+  <meta property="og:description" content={description}>
+  <meta property="og:url" content={canonical}>
+  <meta property="og:locale" content="ru_RU">
+  <link rel="icon" href={`${B}favicon.svg`} type="image/svg+xml">
+  <!-- Шрифты — локально из проекта (@fontsource): без запросов к Google (152-ФЗ, скорость в РФ) -->
+  <slot name="head" />
+  <script type="application/ld+json" set:html={JSON.stringify([org, ...schema])} />
+</head>
+<body>
+  <header class="bar">
+    <a href={B} class="logo" aria-label={`${brand.name} — на главную`}>
+      <svg width="30" height="30" viewBox="0 0 34 34" fill="none" stroke="#E8B04B" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="17" r="7"/><path d="M18 17h14M27 17v6M31 17v4"/></svg>
+      {brand.name}
+    </a>
+    <nav class="bar-links" aria-label="Контакты">
+      <a href={brand.phoneHref} class="hide-sm">{brand.phone}</a>
+      <a href={brand.telegram} rel="noopener">Telegram</a>
+    </nav>
+  </header>
+  <slot />
+</body>
+</html>

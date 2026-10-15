@@ -1,0 +1,64 @@
+---
+// Панель портфолио в фирменных цветах клиента. Без логотипов: название набрано шрифтом сайта.
+// Иллюстрация — своя, по отрасли; цвета берёт из темы (CSS-переменные), классы: l — линия, f — бледная, a — акцент.
+import type { Case } from '../data/site';
+interface Props { c: Case; i: number; }
+const { c, i } = Astro.props;
+const t = c.theme;
+const style = `--p-bg:${t.bg};--p-text:${t.text};--p-line:${t.line};--p-faint:${t.faint};--p-acc:${t.accent};${t.stripe ? `--p-stripe:${t.stripe};` : ''}`;
+---
+<article class={`panel${i === 0 ? ' open' : ''}${t.stripe ? ' striped' : ''}`} style={style} tabindex="0" aria-label={`${c.client} — ${c.work}, ${c.industry}`}>
+  <div class="panel-top"><span class="panel-num">0{i + 1}</span><span class="panel-tag">{c.work}</span></div>
+  <div class="panel-art" aria-hidden="true">
+    <svg viewBox="0 0 400 250" fill="none" stroke-linecap="round" stroke-linejoin="round" preserveAspectRatio="xMidYMid meet">
+      {c.art === 'realty' && (
+        <g stroke-width="2">
+          <rect class="l" x="80" y="45" width="240" height="160" rx="2"/>
+          <path class="l" d="M80 125h90M170 45v60M170 125v80M230 125h90M230 45v40M230 105v20"/>
+          <path class="f" d="M170 105a20 20 0 0 1 20 20M230 85a20 20 0 0 0 -20 20" stroke-dasharray="3 4"/>
+          <rect class="room af" x="232" y="127" width="86" height="76"/>
+          <path class="f flow" d="M80 225h240" stroke-width="1.5"/><path class="f" d="M80 219v12M320 219v12" stroke-width="1.5"/>
+          <g class="pin"><path class="a" d="M275 140c-12 0-20 9-20 19 0 14 20 32 20 32s20-18 20-32c0-10-8-19-20-19z" stroke-width="2.5"/><circle class="a" cx="275" cy="159" r="6"/></g>
+          <circle class="a pulse" cx="275" cy="191" r="10" stroke-width="1.5"/>
+        </g>
+      )}
+      {c.art === 'electronics' && (
+        <g stroke-width="2">
+          <rect class="a" x="160" y="85" width="80" height="80" rx="6" stroke-width="2.5"/>
+          <rect class="l" x="176" y="101" width="48" height="48" rx="3"/>
+          <path class="l" d="M175 85v-10M190 85v-10M205 85v-10M220 85v-10M175 165v10M190 165v10M205 165v10M220 165v10M160 100h-10M160 115h-10M160 130h-10M160 145h-10M240 100h10M240 115h10M240 130h10M240 145h10"/>
+          <path class="f" d="M150 115H100V60H60M150 145H120V200H50M250 100H300V50H350M250 145H320V195H360M190 175v40h-60M220 75V35h70"/>
+          <path class="a flow" d="M150 115H100V60H60M250 145H320V195H360M220 75V35h70" stroke-dasharray="8 14"/>
+          <circle class="a" cx="60" cy="60" r="5"/><circle class="l" cx="50" cy="200" r="5"/><circle class="l" cx="350" cy="50" r="5"/><circle class="a" cx="360" cy="195" r="5"/><circle class="l" cx="130" cy="215" r="5"/><circle class="a" cx="290" cy="35" r="5"/>
+          <circle class="a pulse" cx="200" cy="125" r="8" stroke-width="1.5"/>
+        </g>
+      )}
+      {c.art === 'finance' && (
+        <g stroke-width="2">
+          <path class="f" d="M50 205h300M50 160h300M50 115h300M50 70h300" stroke-width="1.5"/>
+          <g class="ff"><rect x="70" y="170" width="22" height="35" rx="2"/><rect x="115" y="160" width="22" height="45" rx="2"/><rect x="160" y="150" width="22" height="55" rx="2"/><rect x="205" y="128" width="22" height="77" rx="2"/><rect x="250" y="110" width="22" height="95" rx="2"/><rect x="295" y="84" width="22" height="121" rx="2"/></g>
+          <path class="draw a" d="M50 185C90 178 110 160 140 150S190 140 215 118S270 92 306 62" stroke-width="3" pathLength="100"/>
+          <circle class="afill" cx="306" cy="62" r="5"/>
+          <circle class="a pulse" cx="306" cy="62" r="10" stroke-width="1.5"/>
+        </g>
+      )}
+      {c.art === 'hockey' && (
+        <g stroke-width="2">
+          <rect class="l" x="40" y="35" width="320" height="180" rx="70"/>
+          <path class="l" d="M200 35v180"/><path class="f" d="M145 35v180M255 35v180"/>
+          <circle class="l" cx="200" cy="125" r="28"/>
+          <circle class="f" cx="105" cy="85" r="18"/><circle class="f" cx="105" cy="165" r="18"/><circle class="f" cx="295" cy="85" r="18"/><circle class="f" cx="295" cy="165" r="18"/>
+          <path class="l" d="M70 110a12 15 0 0 1 0 30M330 110a12 15 0 0 0 0 30"/>
+          <path class="a flow" d="M130 190C170 170 200 150 240 140S300 128 326 125" stroke-dasharray="6 10"/>
+          <ellipse class="afill puck" cx="326" cy="125" rx="7" ry="4"/>
+          <circle class="a pulse" cx="330" cy="125" r="12" stroke-width="1.5"/>
+        </g>
+      )}
+    </svg>
+  </div>
+  <div class="panel-foot">
+    <span class="panel-ind">{c.industry}</span>
+    <h3 class="panel-name">{c.client}</h3>
+    {c.result && <p class="panel-result">{c.result}</p>}
+  </div>
+</article>

@@ -1,0 +1,325 @@
+:root{
+  --bg:#0B0C0E; --bg-2:#121417; --card:#1B1E22;
+  --line:#23262B; --line-2:#2A2D33; --line-3:#3A3E45;
+  --text:#ECEAE4; --dim:#A9ADB3; --faint:#8A8F96;
+  --accent:#E8B04B; --accent-hi:#F3C976;
+  --display:'Unbounded',sans-serif; --body:'Manrope',sans-serif; --mono:'JetBrains Mono',monospace;
+  --pad:clamp(20px,4vw,64px);
+  --ease:cubic-bezier(.77,0,.18,1);
+  --zoom:cubic-bezier(.76,0,.24,1);
+  /* замочная скважина: центр круга (--kx,--ky) и размер (--ks) — общие для рисунка и маски */
+  --ks:min(58vh,36vw); --kx:71vw; --ky:44vh;
+  --keyhole:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M43.5 56.8A18 18 0 1 1 56.5 56.8L63 86H37Z'/%3E%3C/svg%3E");
+  --mx:70vw; --my:40vh;
+}
+@media(max-width:900px){:root{--ks:min(50vw,34vh);--kx:50vw;--ky:26vh}}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:400 17px/1.55 var(--body)}
+/* плёночное зерно поверх всего */
+body::after{content:'';position:fixed;inset:-50%;z-index:90;pointer-events:none;opacity:.07;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation:grain 1s steps(4) infinite}
+@keyframes grain{0%{transform:translate(0,0)}25%{transform:translate(-3%,2%)}50%{transform:translate(2%,-3%)}75%{transform:translate(-2%,-2%)}}
+a{color:var(--accent)}a:hover{color:var(--accent-hi)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.no-anim *,.no-anim *::before,.no-anim *::after{transition:none!important}
+
+.kicker{font:400 12px/1 var(--mono);letter-spacing:2.5px;color:var(--accent);text-transform:uppercase}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:56px;padding:0 30px;border-radius:999px;text-decoration:none;font:700 16px var(--body);border:1px solid transparent;cursor:pointer;transition:background .25s,border-color .25s,color .25s,transform .25s var(--ease)}
+.btn-primary{background:var(--accent);color:#111}
+.btn-primary:hover{background:var(--accent-hi);color:#111}
+.btn-ghost{border-color:var(--line-3);color:var(--text);background:none}
+.btn-ghost:hover{border-color:var(--text);color:var(--text)}
+
+/* ---------- верхняя панель ---------- */
+.bar{position:fixed;inset:0 0 auto 0;z-index:40;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:22px var(--pad);pointer-events:none;mix-blend-mode:normal}
+.bar>*{pointer-events:auto}
+.logo{display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--text);font:700 18px/1 var(--display);letter-spacing:3px}
+.logo:hover{color:var(--text)}
+.bar-links{display:flex;align-items:center;gap:24px;font-size:15px}
+.bar-links a{color:var(--dim);text-decoration:none}.bar-links a:hover{color:var(--text)}
+@media(max-width:640px){.bar-links .hide-sm{display:none}}
+
+/* =========================================================
+   ТРЕЙЛЕР
+   ========================================================= */
+.trailer{display:none}
+.trailer-on .trailer{display:block;position:fixed;inset:0;z-index:100;background:#050506;color:var(--text);overflow:hidden;cursor:pointer;animation:tr-kill .5s ease 8s forwards}
+@keyframes tr-kill{to{opacity:0;visibility:hidden}}
+.trailer-on body{overflow:hidden}
+.tr{position:absolute;left:50%;top:50%;margin:0;transform:translate(-50%,-50%);white-space:nowrap;text-align:center}
+.tr-line{position:absolute;left:0;top:50%;height:1px;width:100%;background:linear-gradient(90deg,transparent,var(--accent),transparent);transform:scaleX(0);animation:tr-line 1.4s var(--ease) .1s forwards, tr-fade .4s ease 1.5s forwards}
+/* буквы в трейлере: выезжают волной из-под невидимой линии и уходят вверх */
+.tr .w{display:inline-block;overflow:hidden;padding:.12em .02em;margin:-.12em -.02em;vertical-align:top}
+.tr .ch{display:inline-block;transform:translateY(115%) rotate(8deg);opacity:0;
+  animation:ch-in var(--di,.75s) var(--ease) calc(var(--t) + var(--i) * var(--st,28ms)) forwards}
+.tr.has-out .ch{animation:ch-in var(--di,.75s) var(--ease) calc(var(--t) + var(--i) * var(--st,28ms)) forwards,
+  ch-out var(--do,.45s) var(--ease) calc(var(--t2) + var(--i) * var(--st2,14ms)) forwards}
+.tr-a,.tr-b{font:500 clamp(26px,4vw,60px)/1.1 var(--display);letter-spacing:-.5px}
+.tr-b{color:var(--accent)}
+.tr-cut{font:700 clamp(46px,11vw,176px)/1 var(--display);letter-spacing:-3px}
+.tr-cut-1{color:var(--accent)}
+.tr-cut-2 .ch{-webkit-text-stroke:1.5px var(--text);color:transparent}
+.tr-progress{position:absolute;left:50%;top:calc(50% + clamp(40px,7vw,110px));width:min(520px,60vw);height:2px;margin-left:calc(min(520px,60vw) / -2);background:var(--accent);transform:scaleX(0);transform-origin:left;
+  animation:tr-prog 1.9s linear 2.4s forwards, tr-fade .3s ease 4.3s forwards}
+.tr-c{font:500 clamp(20px,2.8vw,38px)/1.1 var(--display);color:var(--dim);top:34%}
+.tr-key{position:absolute;left:50%;top:57%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:18px}
+.tr-key svg{width:min(340px,60vw);opacity:0;animation:tr-in .3s ease 4.6s forwards}
+.tr-draw{stroke-dasharray:1;stroke-dashoffset:1;animation:draw 1.1s var(--ease) 4.65s forwards}
+.tr-word{font:700 clamp(40px,7vw,110px)/1 var(--display);text-shadow:0 0 40px rgba(232,176,75,.4)}
+.tr-word .w{padding:.15em .1em}
+.tr-word .ch{margin:0 .22em;transform:translateY(120%) scale(.6);filter:blur(10px);opacity:0;animation:ch-in var(--di,.9s) var(--ease) calc(var(--t) + var(--i) * var(--st,110ms)) forwards}
+.tr-skip{position:absolute;right:var(--pad);bottom:28px;background:none;border:1px solid var(--line-3);color:var(--dim);border-radius:999px;padding:10px 18px;font:400 12px var(--mono);letter-spacing:1.5px;cursor:pointer}
+.tr-skip:hover{color:var(--text);border-color:var(--text)}
+/* финал: растворение сквозь скважину в месте, где она стоит на первом слайде */
+.trailer-out .trailer{
+  -webkit-mask:linear-gradient(#000 0 0),var(--keyhole) no-repeat;
+  -webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) exclude,var(--keyhole) no-repeat;
+  -webkit-mask-size:100% 100%,calc(var(--ks)*22) calc(var(--ks)*22);mask-size:100% 100%,calc(var(--ks)*22) calc(var(--ks)*22);
+  -webkit-mask-position:0 0,calc(var(--kx) - var(--ks)*11) calc(var(--ky) - var(--ks)*8.8);mask-position:0 0,calc(var(--kx) - var(--ks)*11) calc(var(--ky) - var(--ks)*8.8);
+  animation:iris 1.05s var(--zoom) forwards}
+@keyframes iris{
+  from{-webkit-mask-size:100% 100%,0 0;mask-size:100% 100%,0 0;-webkit-mask-position:0 0,var(--kx) calc(var(--ky) - 0px);mask-position:0 0,var(--kx) var(--ky)}
+  to{-webkit-mask-size:100% 100%,calc(var(--ks)*22) calc(var(--ks)*22);mask-size:100% 100%,calc(var(--ks)*22) calc(var(--ks)*22);-webkit-mask-position:0 0,calc(var(--kx) - var(--ks)*11) calc(var(--ky) - var(--ks)*8.8);mask-position:0 0,calc(var(--kx) - var(--ks)*11) calc(var(--ky) - var(--ks)*8.8)}}
+@keyframes tr-line{to{transform:scaleX(1)}}
+@keyframes tr-fade{to{opacity:0}}
+@keyframes tr-in{from{opacity:0;filter:blur(12px);letter-spacing:.08em}to{opacity:1;filter:blur(0)}}
+@keyframes tr-out{to{opacity:0;filter:blur(10px)}}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes ch-in{to{transform:none;opacity:1;filter:none}}
+@keyframes ch-out{to{transform:translateY(-115%) rotate(-6deg);opacity:0}}
+@keyframes tr-prog{to{transform:scaleX(1)}}
+
+/* =========================================================
+   ДЕКА
+   ========================================================= */
+.slide{position:relative;min-height:100vh;min-height:100dvh;display:flex;align-items:center;padding:clamp(76px,11vh,104px) var(--pad) clamp(56px,9vh,84px);overflow:hidden}
+.slide-inner{position:relative;z-index:2;width:100%;max-width:1320px;margin:0 auto}
+.keyhole{display:none}
+
+html.deck-on,html.deck-on body{height:100%;overflow:hidden}
+html.deck-on .deck{position:relative;height:100vh;height:100dvh;overflow:hidden}
+html.deck-on .slide{position:absolute;inset:0;height:100%}
+html.deck-on .s-start{z-index:1}
+html.deck-on .s-work{z-index:2}
+html.deck-on .keyhole{z-index:3}
+html.deck-on .s-contact{z-index:4}
+html.deck-on .slide{padding-right:calc(var(--pad) + 24px)}
+
+/* 1 → 2: портфолио раскрывается сквозь скважину */
+html.deck-on .s-work{padding:0;
+  -webkit-mask:var(--keyhole) no-repeat;mask:var(--keyhole) no-repeat;
+  -webkit-mask-size:var(--ks) var(--ks);mask-size:var(--ks) var(--ks);
+  -webkit-mask-position:calc(var(--kx) - var(--ks)/2) calc(var(--ky) - var(--ks)*.4);mask-position:calc(var(--kx) - var(--ks)/2) calc(var(--ky) - var(--ks)*.4);
+  transition:-webkit-mask-size 1.25s var(--zoom),-webkit-mask-position 1.25s var(--zoom),mask-size 1.25s var(--zoom),mask-position 1.25s var(--zoom),filter 1.25s var(--zoom);
+  filter:brightness(.62) saturate(.9)}
+html.deck-on .deck:not([data-i="0"]) .s-work{
+  -webkit-mask-size:calc(var(--ks)*22) calc(var(--ks)*22);mask-size:calc(var(--ks)*22) calc(var(--ks)*22);
+  -webkit-mask-position:calc(var(--kx) - var(--ks)*11) calc(var(--ky) - var(--ks)*8.8);mask-position:calc(var(--kx) - var(--ks)*11) calc(var(--ky) - var(--ks)*8.8);
+  filter:none}
+.zoom{width:100%;display:flex;align-items:center}
+html.deck-on .zoom{position:absolute;inset:0;padding:clamp(76px,11vh,104px) calc(var(--pad) + 24px) clamp(56px,9vh,84px) var(--pad);transform-origin:var(--kx) var(--ky);transform:scale(1.35);transition:transform 1.25s var(--zoom)}
+html.deck-on .deck:not([data-i="0"]) .zoom{transform:none}
+/* свет за дверью: пока смотрим в скважину — тёплое сияние, при входе растворяется */
+html.deck-on .s-work::after{content:'';position:absolute;inset:0;z-index:5;pointer-events:none;background:radial-gradient(circle at var(--kx) calc(var(--ky) + var(--ks)*.1),#FFF1CF 0%,#F3C976 calc(var(--ks)*.12),#C98A22 calc(var(--ks)*.3),#3a2606 calc(var(--ks)*.62),#0B0C0E calc(var(--ks)*.95));transition:opacity .9s ease .15s}
+html.deck-on .deck:not([data-i="0"]) .s-work::after{opacity:0}
+/* первый слайд уходит вглубь */
+html.deck-on .s-start .slide-inner,html.deck-on .s-start .marquee{transition:transform 1.25s var(--zoom),opacity 1s ease}
+html.deck-on .deck:not([data-i="0"]) .s-start .slide-inner{transform:scale(.9);opacity:0}
+
+/* скважина на первом слайде */
+html.deck-on .keyhole{display:block;position:absolute;left:calc(var(--kx) - var(--ks)/2);top:calc(var(--ky) - var(--ks)*.4);width:var(--ks);height:var(--ks);padding:0;border:0;background:none;cursor:pointer;color:var(--accent);
+  transition:opacity .6s ease,transform 1.25s var(--zoom);transform-origin:50% 40%}
+.keyhole svg{width:100%;height:100%;overflow:visible;filter:drop-shadow(0 0 18px rgba(232,176,75,.55)) drop-shadow(0 0 60px rgba(232,176,75,.25))}
+.keyhole path{stroke-dasharray:1;stroke-dashoffset:0;animation:breathe 4s ease-in-out infinite}
+.keyhole-label{position:absolute;left:50%;top:92%;transform:translateX(-50%);white-space:nowrap;font:400 12px var(--mono);letter-spacing:2px;text-transform:uppercase;color:var(--dim);transition:color .3s}
+.keyhole:hover .keyhole-label{color:var(--accent)}
+html.deck-on .deck:not([data-i="0"]) .keyhole{opacity:0;transform:scale(6);pointer-events:none}
+@keyframes breathe{0%,100%{opacity:1}50%{opacity:.55}}
+
+/* 2 → 3: шторка снизу */
+html.deck-on .s-contact{clip-path:inset(100% 0 0 0);transition:clip-path 1.05s var(--zoom)}
+html.deck-on .deck[data-i="2"] .s-contact{clip-path:inset(0 0 0 0)}
+
+/* появление содержимого */
+html.deck-on .slide .reveal{opacity:0;transform:translateY(32px);transition:opacity .8s ease,transform .9s var(--ease)}
+html.deck-on .slide.is-active .reveal{opacity:1;transform:none;transition-delay:.35s}
+html.deck-on .slide.is-active .reveal:nth-child(2){transition-delay:.43s}
+html.deck-on .slide.is-active .reveal:nth-child(3){transition-delay:.51s}
+html.deck-on .slide.is-active .reveal:nth-child(4){transition-delay:.59s}
+html.deck-on .slide.is-active .reveal:nth-child(5){transition-delay:.67s}
+html.deck-on .s-work .reveal{transform:none;opacity:1}
+
+.dots{position:fixed;right:calc(var(--pad) / 2);top:50%;transform:translateY(-50%);z-index:40;display:none;flex-direction:column;gap:6px}
+html.deck-on .dots{display:flex}
+.dot{display:flex;align-items:center;justify-content:flex-end;gap:12px;min-height:32px;background:none;border:0;padding:0 4px;cursor:pointer;color:var(--faint);font:400 11px var(--mono);letter-spacing:1.5px;text-transform:uppercase}
+.dot span{opacity:0;transition:opacity .3s}
+.dot::after{content:'';width:8px;height:8px;border-radius:50%;border:1px solid var(--line-3);transition:all .3s}
+.dot:hover span{opacity:1}
+.dot[aria-current="true"]{color:var(--text)}
+.dot[aria-current="true"]::after{background:var(--accent);border-color:var(--accent);transform:scale(1.25)}
+.counter{position:fixed;left:var(--pad);bottom:24px;z-index:40;display:none;font:400 12px var(--mono);letter-spacing:2px;color:var(--faint)}
+html.deck-on .counter{display:block}
+.counter b{color:var(--text);font-weight:400}
+@media(max-width:640px){html.deck-on .counter{display:none}html.deck-on .dots{display:none}html.deck-on .slide{padding-right:var(--pad)}html.deck-on .zoom{padding-right:var(--pad)}}
+
+/* =========================================================
+   1. СТАРТ
+   ========================================================= */
+.s-start{background:var(--bg)}
+.hero-bg{position:absolute;inset:0;z-index:0;pointer-events:none}
+.hero-bg::before,.hero-bg::after{content:'';position:absolute;inset:0;background-image:radial-gradient(circle,#2A2D33 1px,transparent 1.4px);background-size:26px 26px}
+.hero-bg::after{background-image:radial-gradient(circle,var(--accent) 1px,transparent 1.6px);
+  -webkit-mask:radial-gradient(260px circle at var(--mx) var(--my),#000 0%,transparent 70%);mask:radial-gradient(260px circle at var(--mx) var(--my),#000 0%,transparent 70%);opacity:.7}
+.s-start::before{content:'';position:absolute;z-index:0;left:calc(var(--kx) - var(--ks));top:calc(var(--ky) - var(--ks)*.8);width:calc(var(--ks)*2);height:calc(var(--ks)*2);border-radius:50%;background:radial-gradient(circle,rgba(232,176,75,.16),transparent 62%);pointer-events:none}
+.hero{max-width:1320px}
+.hero h1{margin:clamp(14px,2.4vh,24px) 0 0;font:700 clamp(40px,min(7vw,11vh),128px)/.98 var(--display);letter-spacing:-2px}
+.h1-a{display:block}
+/* заголовок: буквы выезжают волной; меняющееся слово — тоже по буквам */
+.split .w{display:inline-block;overflow:hidden;padding:.06em .03em .14em;margin:-.06em -.03em -.14em;vertical-align:top}
+.split .ch{display:inline-block}
+.h1-a{display:block}
+html.deck-on .h1-a .ch, html.trailer-on .h1-a .ch{transform:translateY(110%) rotate(6deg)}
+html.hero-in .h1-a .ch{animation:ch-in 1s var(--ease) calc(.05s + var(--i) * 40ms) both}
+.rot{display:inline-grid;color:var(--accent)}
+.rw{grid-area:1/1}
+.rw .ch{transform:translateY(110%) rotate(8deg);transition:transform .75s var(--ease) calc(var(--i) * 32ms)}
+.rw.on .ch{transform:none}
+html.trailer-on:not(.hero-in) .rw.on .ch{transform:translateY(110%)}
+.rw.off .ch{transform:translateY(-110%) rotate(-6deg);transition-duration:.6s}
+/* заголовки слайдов 2–3: волна по буквам при входе на слайд */
+html.deck-on .sh .ch{transform:translateY(110%) rotate(6deg);transition:transform .9s var(--ease) calc(.45s + var(--i) * 24ms)}
+html.deck-on .is-active .sh .ch{transform:none}
+.contact h2 .ln{display:block}
+.hero .lead{margin:clamp(16px,3vh,28px) 0 0;max-width:520px;font-size:clamp(16px,1.35vw,19px);color:var(--dim)}
+.actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:clamp(20px,4vh,40px)}
+.range{display:flex;align-items:center;gap:16px;margin-top:clamp(18px,3.5vh,36px);font:400 12px var(--mono);letter-spacing:1.5px;text-transform:uppercase;color:var(--faint)}
+.range b{font:700 clamp(18px,1.7vw,24px)/1 var(--display);letter-spacing:0;color:var(--text);text-transform:none;margin-left:6px}
+.range-line{width:clamp(40px,8vw,120px);height:1px;background:linear-gradient(90deg,var(--line-3),var(--accent))}
+.marquee{position:absolute;left:0;right:0;bottom:0;z-index:2;border-top:1px solid var(--line);overflow:hidden;padding:14px 0;mask:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent)}
+.marquee-track{display:flex;width:max-content;animation:marquee 38s linear infinite}
+.marquee span{font:400 12px var(--mono);letter-spacing:2.5px;text-transform:uppercase;color:var(--faint);padding:0 28px;display:flex;align-items:center;gap:56px}
+.marquee span::after{content:'';width:6px;height:6px;transform:rotate(45deg);background:var(--accent);margin-left:28px;margin-right:-28px}
+@keyframes marquee{to{transform:translateX(-50%)}}
+@media(max-width:900px){
+  .s-start{align-items:flex-end;padding-bottom:84px}
+  .hero h1{font-size:clamp(36px,11vw,60px)}
+  .hero .lead{font-size:15px}
+  .range{display:none}
+}
+
+/* =========================================================
+   2. ПОРТФОЛИО
+   ========================================================= */
+.s-work{background:#08090A}
+.s-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 48px;margin-bottom:clamp(20px,4vh,40px)}
+.s-head h2{margin:14px 0 0;font:500 clamp(28px,3.8vw,56px)/1.05 var(--display);letter-spacing:-.5px}
+.s-head p{margin:0;max-width:340px;color:var(--dim);font-size:15px}
+.panels{display:flex;gap:12px;height:clamp(300px,54vh,540px)}
+.panel{position:relative;flex:1 1 0;min-width:0;display:flex;flex-direction:column;border-radius:16px;overflow:hidden;color:var(--p-text);background:var(--p-bg);cursor:pointer;outline-offset:4px;
+  transition:flex-grow .8s var(--ease),filter .6s ease,transform .6s var(--ease);filter:saturate(.8) brightness(.8)}
+.panel.striped{background:linear-gradient(62deg,transparent 0 72%,var(--p-stripe) 72% 79%,transparent 79%),var(--p-bg)}
+.panel.open{flex-grow:2.6;filter:none}
+.panel-top{display:flex;justify-content:space-between;align-items:center;padding:18px 20px 0;font:400 12px var(--mono);letter-spacing:1.5px}
+.panel-tag{border:1px solid currentColor;border-radius:999px;padding:4px 10px;opacity:.85}
+.panel-art{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:8px 16px;opacity:.45;transform:scale(.9);transition:opacity .6s ease,transform .8s var(--ease)}
+.panel.open .panel-art{opacity:1;transform:none}
+.panel-art svg{width:100%;height:100%;max-height:100%}
+.panel-foot{padding:0 20px 22px}
+.panel-ind{font:400 12px var(--mono);letter-spacing:1.5px;text-transform:uppercase;opacity:.75}
+.panel-name{margin:8px 0 0;font:700 clamp(18px,1.7vw,30px)/1.08 var(--display);letter-spacing:-.4px;transition:font-size .6s var(--ease)}
+.panel.open .panel-name{font-size:clamp(22px,2.6vw,44px)}
+.panel-result{margin:8px 0 0;opacity:.85;font-size:15px}
+.panel .l{stroke:var(--p-line)} .panel .f{stroke:var(--p-faint)} .panel .a{stroke:var(--p-acc)}
+.panel .af{fill:var(--p-acc);fill-opacity:.12;stroke:none} .panel .ff rect{fill:var(--p-faint)} .panel .afill{fill:var(--p-acc);stroke:none}
+.panel .flow{animation:ks-flow 6s linear infinite}
+.panel .pulse{transform-box:fill-box;transform-origin:center;animation:ks-pulse 2.8s ease-out infinite}
+.panel .draw{stroke-dasharray:100;stroke-dashoffset:0}
+.panel.open .draw{animation:ks-draw 1.6s var(--ease)}
+.panel .pin,.panel .puck{transition:transform .8s var(--ease)}
+.panel.open .pin{transform:translateY(-6px)}
+.panel.open .puck{transform:translateX(6px)}
+.panel.open .flow{animation-duration:2.4s}
+.panel .room{transition:fill-opacity .6s}
+.panel.open .room{fill-opacity:.24}
+@keyframes ks-flow{to{stroke-dashoffset:-88}}
+@keyframes ks-pulse{0%{opacity:.9;transform:scale(.6)}100%{opacity:0;transform:scale(2.2)}}
+@keyframes ks-draw{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}
+@media(max-width:760px){
+  .s-head p{display:none}
+  .panels{flex-direction:column;height:auto;gap:8px}
+  .panel{flex:none;height:62px;transition:height .7s var(--ease),filter .6s}
+  .panel.open{height:min(38vh,280px)}
+  .panel-top{display:none}
+  .panel-art{position:absolute;inset:0 0 54px;padding:12px}
+  .panel:not(.open) .panel-art{opacity:0}
+  .panel-foot{margin-top:auto;padding:0 16px 16px;display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+  .panel-name,.panel.open .panel-name{font-size:18px;margin:0;order:-1}
+  .panel-ind{font-size:10px}
+}
+
+/* =========================================================
+   3. КОНТАКТЫ
+   ========================================================= */
+.s-contact{background:var(--accent);color:#111}
+.s-contact .kicker{color:#111;opacity:.7}
+.contact{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,.9fr);gap:clamp(32px,6vw,96px);align-items:end}
+.contact h2{margin:14px 0 0;font:700 clamp(40px,min(7vw,11vh),124px)/.95 var(--display);letter-spacing:-2px}
+.contact h2 .acc{color:#fff;-webkit-text-stroke:0}
+.contact .lead{margin:20px 0 0;max-width:460px;color:rgba(17,17,17,.75);font-size:16px}
+.big-links{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 28px;margin-top:clamp(20px,4vh,36px)}
+.big-link{display:inline-flex;align-items:center;gap:10px;font:700 clamp(24px,2.6vw,40px)/1 var(--display);color:#111;text-decoration:none;border-bottom:2px solid #111;padding-bottom:6px;transition:transform .25s var(--ease)}
+.big-link:hover{color:#111}
+.big-link i{font-style:normal;transition:transform .3s var(--ease)}
+.big-link:hover i{transform:translate(4px,-4px)}
+.mid-link{font-size:17px;color:#111;text-decoration:none;border-bottom:1px solid rgba(17,17,17,.35)}
+.mid-link:hover{color:#111;border-color:#111}
+.form{display:flex;flex-direction:column;gap:12px;background:#111;color:var(--text);border-radius:18px;padding:clamp(20px,3vw,32px)}
+.form-title{font:500 18px/1.3 var(--display);margin-bottom:4px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:13px;color:var(--dim)}
+.field input{font:inherit;min-height:50px;padding:0 16px;background:var(--bg-2);border:1px solid var(--line-2);border-radius:10px;color:var(--text)}
+.field input:focus{border-color:var(--accent);outline:none}
+.hp{position:absolute;left:-9999px}
+.consent{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--dim);cursor:pointer}
+.consent input{width:20px;height:20px;margin:0;accent-color:var(--accent);flex:none}
+.form-status{min-height:1.2em;font-size:14px;color:var(--dim)}
+.legal{position:absolute;left:var(--pad);right:var(--pad);bottom:22px;z-index:2;text-align:right;font-size:12px;color:rgba(17,17,17,.6)}
+.legal a{color:rgba(17,17,17,.75)}
+@media(max-width:900px){
+  .contact{grid-template-columns:1fr;gap:20px}
+  .contact h2{font-size:clamp(34px,10vw,56px)}
+  .contact .lead{display:none}
+  .mid-link{display:none}
+  .legal{text-align:left}
+  .s-contact{padding-bottom:56px}
+}
+@media(max-width:640px){.btn{width:100%}.actions .btn{flex:1 1 auto}.form{gap:10px}.field input{min-height:46px}}
+html.deck-on[data-slide="2"] .counter,html.deck-on[data-slide="2"] .counter b,html.deck-on[data-slide="2"] .bar-links a,html.deck-on[data-slide="2"] .logo{color:#111}
+html.deck-on[data-slide="2"] .logo svg{stroke:#111}
+html.deck-on[data-slide="2"] .dot::after{border-color:rgba(17,17,17,.4)}
+html.deck-on[data-slide="2"] .dot[aria-current="true"]::after{background:#111;border-color:#111}
+.bar-links a,.logo,.counter{transition:color .6s ease}
+
+/* ---------- курсор ---------- */
+.cursor{display:none}
+.has-cursor .cursor{display:block;position:fixed;left:0;top:0;z-index:95;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;background:#fff;mix-blend-mode:difference;pointer-events:none;transition:width .3s var(--ease),height .3s var(--ease),margin .3s var(--ease)}
+.has-cursor .cursor.hover{width:56px;height:56px;margin:-28px 0 0 -28px}
+
+/* ---------- служебные страницы ---------- */
+.page{min-height:100vh;padding:120px var(--pad) 80px}
+.page .inner{max-width:760px;margin:0 auto}
+.page h1{margin:16px 0 0;font:700 clamp(28px,4vw,48px)/1.1 var(--display)}
+.page h2{font:500 22px/1.3 var(--display);margin:36px 0 10px}
+.page p{color:var(--dim)}
+.muted{color:var(--dim)}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .keyhole path{stroke-dashoffset:0}
+  .ch{transform:none!important;opacity:1!important;filter:none!important}
+  .rw:not(.on){display:none}
+}

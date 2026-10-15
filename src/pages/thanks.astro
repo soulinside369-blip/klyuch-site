@@ -1,0 +1,13 @@
+---
+import Base from '../layouts/Base.astro';
+import { brand } from '../data/site';
+const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/';
+---
+<Base title="Заявка принята — КЛЮЧ" description="Спасибо за заявку." noindex>
+  <main class="slide"><div class="slide-inner">
+    <div class="kicker">Заявка принята</div>
+    <h1 style="margin:20px 0 0;font:700 clamp(32px,5vw,72px)/1.05 var(--display);max-width:900px">Спасибо. Мы уже изучаем вашу задачу</h1>
+    <p class="muted" style="max-width:560px;margin:24px 0 0">Свяжемся в течение {brand.responseTime}, уточним детали и пришлём план решения со сроками и вилкой бюджета.</p>
+    <div class="actions"><a href={B} class="btn btn-ghost">На главную</a><a href={brand.telegram} class="btn btn-ghost" rel="noopener">Написать в Telegram</a></div>
+  </div></main>
+</Base>
