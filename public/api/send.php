@@ -1,7 +1,7 @@
 <?php
 // Приём заявки с сайта → Telegram. Настройки — в config.php рядом (не в репозитории).
 header('Content-Type: application/json; charset=utf-8');
-date_default_timezone_set('Europe/Moscow');
+date_default_timezone_set('Asia/Yekaterinburg');   // время владельца; часы работы — будни 9–22
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); echo '{"ok":false}'; exit; }
 
@@ -27,6 +27,8 @@ $task = $clean('task', 2000);
 $service = $clean('service', 100);
 $page = $clean('page', 200);
 $utm = $clean('utm', 300);
+// Ситуации, отмеченные в форме (анонимный выбор «что болит»).
+$pains = array_slice(array_filter(array_map(fn($x) => mb_substr(trim(strip_tags((string)$x)), 0, 60), (array)($_POST['pains'] ?? []))), 0, 8);
 if ($name === '' || $contact === '' || empty($_POST['consent'])) { http_response_code(422); echo '{"ok":false}'; exit; }
 
 // Ответы квиза: поля q_* (одиночные или массивы).
@@ -39,6 +41,7 @@ foreach ($_POST as $k => $v) {
 if ($budget === '' && isset($_POST['q_budget'])) $budget = $clean('q_budget', 50);
 
 $text = "🔑 Заявка с сайта КЛЮЧ\n\nИмя: $name\nКонтакт: $contact"
+  . ($pains ? "\nЧто болит: " . implode('; ', $pains) : '')
   . ($service ? "\nНаправление: $service" : '')
   . ($budget ? "\nБюджет: $budget" : '')
   . ($quiz ? "\n\nДиагностика:\n" . implode("\n", $quiz) : '')
@@ -49,8 +52,16 @@ $text = "🔑 Заявка с сайта КЛЮЧ\n\nИмя: $name\nКонтак
 $dir = __DIR__ . '/leads';
 if (!is_dir($dir)) { @mkdir($dir, 0750, true); }
 if (!is_file("$dir/.htaccess")) { @file_put_contents("$dir/.htaccess", "Require all denied\nDeny from all\n"); }
-$id = date('Ymd-His') . '-' . substr(bin2hex(random_bytes(3)), 0, 6);
-$row = [$id, date('c'), $name, $contact, $service, $budget, str_replace(["\r", "\n"], ' ', $task), $page, $utm];
+$id = date('Ymd-His') . '-' . strtoupper(substr(bin2hex(random_bytes(3)), 0, 6));
+$short = substr($id, -6);   // номер для человека: его видит клиент на странице «Спасибо»
+
+// До скольки перезвонить: в рабочее время — в течение часа, иначе — к 10:00 первого рабочего дня.
+$now = new DateTime();
+$open = fn(DateTime $d) => (int)$d->format('N') <= 5 && (int)$d->format('G') >= 9 && (int)$d->format('G') < 22;
+if ($open($now)) { $due = (clone $now)->modify('+60 minutes'); }
+else { $due = (clone $now)->setTime(10, 0); if ($due <= $now || (int)$due->format('N') > 5) { do { $due->modify('+1 day')->setTime(10, 0); } while ((int)$due->format('N') > 5); } }
+$text = str_replace('🔑 Заявка с сайта КЛЮЧ', "🔑 Заявка №$short с сайта КЛЮЧ\n⏰ Перезвонить до " . $due->format('d.m H:i') . ' (Екб)', $text);
+$row = [$id, date('c'), $name, $contact, implode('; ', $pains), $service, $budget, str_replace(["\r", "\n"], ' ', $task), $page, $utm];
 $fh = @fopen("$dir/leads.csv", 'a');
 if ($fh) { if (flock($fh, LOCK_EX)) { fputcsv($fh, $row, ';'); flock($fh, LOCK_UN); } fclose($fh); }
 $saved = (bool)$fh;
@@ -58,7 +69,7 @@ $saved = (bool)$fh;
 // 2) Уведомление в Telegram. 'telegram_personal' => false — в Telegram уходит только номер заявки,
 //    без имени и контакта (тогда нет трансграничной передачи ПДн; заявку смотрят в api/leads/leads.csv на сервере).
 if (($cfg['telegram_personal'] ?? true) === false) {
-  $text = "🔑 Новая заявка с сайта КЛЮЧ\nНомер: $id\nСмотреть: api/leads/leads.csv на сервере";
+  $text = "🔑 Новая заявка №$short с сайта КЛЮЧ\n⏰ Перезвонить до " . $due->format('d.m H:i') . " (Екб)\nДанные: api/leads/leads.csv на сервере";
 }
 
 $ch = curl_init("https://api.telegram.org/bot{$cfg['token']}/sendMessage");
@@ -73,4 +84,4 @@ $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
 
 // Заявка принята, если она сохранена на сервере ИЛИ дошла в Telegram.
-if ($code === 200 || $saved) { echo '{"ok":true}'; } else { http_response_code(502); echo '{"ok":false}'; }
+if ($code === 200 || $saved) { echo json_encode(['ok' => true, 'id' => $short]); } else { http_response_code(502); echo '{"ok":false}'; }

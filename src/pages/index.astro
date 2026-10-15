@@ -5,7 +5,7 @@
 import Base from '../layouts/Base.astro';
 import CasePanel from '../components/CasePanel.astro';
 import Split from '../components/Split.astro';
-import { brand, hero, trailer, publishedCases, contact } from '../data/site';
+import { brand, hero, trailer, publishedCases, contact, reviews } from '../data/site';
 const slides = [{ id: 'start', label: 'Старт' }, { id: 'work', label: 'Портфолио' }, { id: 'contact', label: 'Контакты' }];
 const keyholePath = 'M43.5 56.8A18 18 0 1 1 56.5 56.8L63 86H37Z';
 const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/';
@@ -59,7 +59,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
       <div class="slide-inner hero">
         <div class="kicker reveal">{hero.kicker}<span class="sep"> · </span><b class="nw">от {hero.range.from} до {hero.range.to}</b></div>
         <h1>
-          <span class="echo-wrap"><Split text={hero.titleStart} class="h1-a" /><span class="echo" aria-hidden="true">{hero.titleStart}</span></span>
+          <Split text={hero.titleStart} class="h1-a h1-small" />
           <span class="rot" aria-hidden="true">{hero.rotating.map((w, k) => <span class={`rw${k === 0 ? ' on' : ''}`}><Split text={w} /></span>)}</span>
           <span class="sr-only">{hero.rotating.join(' ')}</span>
         </h1>
@@ -78,7 +78,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
         <p class="speed reveal" id="speed" aria-hidden="true"><span class="speed-dot" aria-hidden="true"></span><span id="speed-text"></span></p>
       </div>
       <div class="marquee" aria-hidden="true"><div class="marquee-track">
-        {[0, 1].map(() => hero.directions.map((d) => <span>{d}</span>))}
+        {[0, 1].map(() => hero.pains.map((d) => <span>{d}</span>))}
       </div></div>
     </section>
 
@@ -112,16 +112,24 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
           <div class="big-links reveal">
             <a href={brand.telegram} rel="noopener" class="big-link" data-magnetic>Telegram <i>↗</i></a>
             <a href={brand.phoneHref} class="mid-link mid-phone">{brand.phone}</a>
+            <a href={brand.telegram2} rel="noopener" class="mid-link mid-tg2">{brand.telegram2Label}</a>
+            {reviews.map((r) => <a href={r.url} rel="noopener" class="mid-link">{r.label} ↗</a>)}
             {!brand.email.startsWith('[') && <a href={`mailto:${brand.email}`} class="mid-link mid-mail">{brand.email}</a>}
           </div>
         </div>
         <form class="form js-lead reveal" action={`${B}api/send.php`} method="post" novalidate data-tg={brand.telegram}>
-          <div class="form-title">Или оставьте контакт — перезвоним</div>
+          <div class="form-title">{contact.formTitle}</div>
+          <p class="form-sla">{contact.sla}</p>
+          <fieldset class="pains">
+            <legend>{contact.painsLabel}</legend>
+            <div class="pains-row">{hero.pains.map((p, k) => <label class="pain"><input type="checkbox" name="pains[]" value={p} id={`pain-${k}`}><span>{p}</span></label>)}</div>
+          </fieldset>
           <div class="field"><input id="f-name" name="name" type="text" autocomplete="name" required minlength="2" placeholder=" "><label for="f-name">Как вас зовут</label><span class="field-msg">Минимум 2 буквы</span></div>
           <div class="field"><input id="f-contact" name="contact" type="text" autocomplete="tel" required pattern="^(\+?[0-9][0-9\s()\-]{9,}|@?[A-Za-z0-9_]{5,})$" placeholder=" "><label for="f-contact">Телефон или @telegram</label><span class="field-msg">Номер телефона или ник в Telegram</span></div>
           <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
           <label class="consent"><input type="checkbox" name="consent" value="1" required><span>Даю <a href={`${B}consent/`} target="_blank" rel="noopener">согласие на обработку персональных данных</a></span></label>
           <button type="submit" class="btn btn-primary" data-magnetic>Жду звонка</button>
+          <p class="form-trust">{contact.trust.join(' · ')}</p>
           <div class="form-status" role="status" aria-live="polite"></div>
         </form>
       </div>
@@ -517,7 +525,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
           // Нет PHP (GitHub Pages, статичный хостинг): сервер отдаёт 404/405 или сам файл вместо JSON.
           if ([404, 405, 501].includes(r.status) || !(r.headers.get('content-type') || '').includes('json')) { showFallback(); if (btn) btn.disabled = false; return; }
           const j = await r.json().catch(() => ({}));
-          if (r.ok && j.ok) { feel('success'); goal('lead', false); await new Promise((ok) => setTimeout(ok, 350)); const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/'; location.href = base + 'thanks/'; return; }
+          if (r.ok && j.ok) { feel('success'); goal('lead', false); await new Promise((ok) => setTimeout(ok, 350)); const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/'; location.href = base + 'thanks/' + (j.id ? `?n=${encodeURIComponent(j.id)}` : ''); return; }
           feel('error'); if (status) status.textContent = 'Не удалось отправить. Напишите нам в Telegram или позвоните.';
         } catch { feel('error'); if (status) status.textContent = 'Нет связи. Напишите нам в Telegram или позвоните.'; }
         if (btn) btn.disabled = false;

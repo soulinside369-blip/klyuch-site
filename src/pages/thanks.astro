@@ -1,6 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
-import { brand } from '../data/site';
+import { brand, contact, schedule } from '../data/site';
 const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/';
 // Скважина — та же форма, что на главной: ключ повернулся, дверь открыта.
 const keyhole = 'M43.5 56.8A18 18 0 1 1 56.5 56.8L63 86H37Z';
@@ -13,13 +13,37 @@ const keyhole = 'M43.5 56.8A18 18 0 1 1 56.5 56.8L63 86H37Z';
       </div>
       <div class="kicker">Заявка принята</div>
       <h1 class="thanks-title">Ключ повернулся.<br><span>Задача у нас.</span></h1>
-      <p class="thanks-lead">Свяжемся в течение {brand.responseTime}: уточним детали и пришлём план решения со сроками и вилкой бюджета.</p>
+      <p class="thanks-due" id="due" hidden></p>
+      <p class="thanks-lead">Позвоним, зададим 3–4 вопроса и назовём сроки и вилку бюджета. {contact.sla}</p>
       <div class="actions thanks-actions">
         <a href={brand.telegram} class="btn btn-primary" rel="noopener">Написать в Telegram</a>
         <a href={B} class="btn btn-ghost">На главную</a>
       </div>
     </div>
   </main>
+  <script is:inline define:vars={{ schedule }}>
+    // Номер заявки и «до скольки перезвоним» — по часам работы владельца (тот же расчёт, что в сообщении бота).
+    (function () {
+      var n = (new URLSearchParams(location.search).get('n') || '').replace(/[^A-Z0-9]/gi, '').slice(0, 12);
+      var el = document.getElementById('due'); if (!el) return;
+      var H = 3600e3, off = schedule.tzOffsetHours * H, now = Date.now();
+      var local = function (t) { return new Date(t + off); };          // «стенные часы» владельца в UTC-полях
+      var open = function (t) { var d = local(t); return schedule.days.indexOf(d.getUTCDay()) >= 0 && d.getUTCHours() >= schedule.from && d.getUTCHours() < schedule.to; };
+      var due;
+      if (open(now)) due = now + schedule.callWithinMin * 60e3;
+      else {
+        var d = local(now); var t = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), schedule.from + 1) - off;
+        while (t <= now || schedule.days.indexOf(local(t).getUTCDay()) < 0) t += 24 * H;
+        due = t;
+      }
+      var dd = new Date(due), today = new Date();
+      var tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+      var day = dd.toDateString() === today.toDateString() ? '' : dd.toDateString() === tomorrow.toDateString() ? 'завтра ' : dd.toLocaleDateString('ru-RU', { weekday: 'long' }) + ' ';
+      var time = dd.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+      el.textContent = (n ? 'Заявка № ' + n + ' принята. ' : '') + 'Перезвоним ' + day + 'до ' + time + ' по вашему времени.';
+      el.hidden = false;
+    })();
+  </script>
 </Base>
 
 <style>
@@ -32,7 +56,8 @@ const keyhole = 'M43.5 56.8A18 18 0 1 1 56.5 56.8L63 86H37Z';
     animation: turn 1.4s cubic-bezier(.22,1,.36,1) .2s both; transform-origin: 50% 40%; }
   .thanks-title { margin: 18px 0 0; font: 700 clamp(34px, 6vw, 76px)/1.02 var(--display); letter-spacing: -1.5px; }
   .thanks-title span { color: var(--accent); }
-  .thanks-lead { margin: 22px auto 0; max-width: 520px; color: var(--dim); font-size: 17px; }
+  .thanks-lead { margin: 14px auto 0; max-width: 540px; color: var(--dim); font-size: 16px; }
+  .thanks-due { margin: 26px auto 0; max-width: 560px; font: 500 clamp(18px, 2.2vw, 24px)/1.35 var(--display); color: var(--text); }
   .thanks-actions { justify-content: center; }
   @keyframes turn { from { opacity: 0; transform: rotate(-90deg) scale(.6); } to { opacity: 1; transform: none; } }
   @keyframes glow { 50% { opacity: .55; transform: scale(.92); } }
