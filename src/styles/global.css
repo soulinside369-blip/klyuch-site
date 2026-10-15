@@ -334,7 +334,7 @@ html.deck-on,html.deck-on body{overscroll-behavior:none}
 html.deck-on .progress{display:block}
 .progress span{display:block;height:100%;background:var(--accent);transform-origin:left;transform:scaleX(.333);transition:transform 1.1s var(--zoom),background .6s}
 html.deck-on[data-slide="2"] .progress span{background:#111}
-.scroll-hint{position:fixed;left:50%;bottom:22px;z-index:41;transform:translateX(-50%);display:none;flex-direction:column;align-items:center;gap:8px;background:none;border:0;padding:6px 12px;cursor:pointer;color:var(--dim);font:400 11px var(--mono);letter-spacing:2px;text-transform:uppercase;transition:opacity .5s ease}
+.scroll-hint{position:fixed;left:50%;bottom:58px;z-index:41;transform:translateX(-50%);display:none;flex-direction:column;align-items:center;gap:8px;background:none;border:0;padding:6px 12px;cursor:pointer;color:var(--dim);font:400 11px var(--mono);letter-spacing:2px;text-transform:uppercase;transition:opacity .5s ease}
 html.deck-on .scroll-hint{display:flex}
 html.deck-on:not([data-slide="0"]) .scroll-hint,html.hint-used .scroll-hint,html.trailer-on .scroll-hint{opacity:0;pointer-events:none}
 .hint-mouse{width:22px;height:34px;border:1.5px solid var(--line-3);border-radius:12px;position:relative}
