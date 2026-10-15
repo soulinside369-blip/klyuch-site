@@ -382,7 +382,8 @@ html.deck-on .s-work.is-active .panel{animation:panel-in 1s var(--ease) both;ani
 .big-links{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 28px;margin-top:clamp(20px,4vh,36px)}
 .big-link{display:inline-flex;align-items:center;gap:10px;font:700 clamp(24px,2.6vw,40px)/1 var(--display);color:#111;text-decoration:none;border-bottom:2px solid #111;padding-bottom:6px;transition:transform .25s var(--ease)}
 .big-link:hover{color:#111}
-.big-link i{font-style:normal;transition:transform .3s var(--ease)}
+.big-link i{font-style:normal;display:inline-flex;transition:transform .3s var(--ease)}
+.big-link .arr{width:.62em;height:.62em}
 .big-link:hover i{transform:translate(4px,-4px)}
 .mid-link{font-size:17px;color:#111;text-decoration:none;border-bottom:1px solid rgba(17,17,17,.35)}
 .mid-link:hover{color:#111;border-color:#111}
@@ -412,14 +413,18 @@ html.deck-on .s-work.is-active .panel{animation:panel-in 1s var(--ease) both;ani
 .form-status{min-height:1.2em;font-size:14px;color:var(--dim)}
 .legal{position:absolute;left:var(--pad);right:var(--pad);bottom:22px;z-index:2;text-align:right;font-size:12px;color:rgba(17,17,17,.6)}
 .legal a{color:rgba(17,17,17,.75)}
+.form-legal{display:none;margin:0;font-size:11px;color:var(--faint);text-align:center}.form-legal a{color:var(--dim)}
 @media(max-width:900px){
   .contact{grid-template-columns:1fr;gap:20px}
   .contact h2{font-size:clamp(34px,10vw,56px)}
   .contact .lead{display:none}
   .mid-link{display:none}
   .mid-phone,.mid-tg2{display:inline;font-size:16px}  /* на телефоне номер нужен: нажал — позвонил */
-  .legal{text-align:left}
-  .s-contact{padding-bottom:56px}
+  .legal{display:none}
+  .form-legal{display:block}             /* на телефоне подвал — внутри формы: абсолютный низ уходил под форму и панель Safari */
+  .s-contact .ghost-num{display:none}    /* огромное «03» наезжало на шапку */
+  .s-contact{padding-bottom:max(20px,env(safe-area-inset-bottom))}
+  .big-links{gap:6px 16px}
 }
 @media(max-width:640px){.actions .btn-ghost{display:none}.btn{width:100%}.actions .btn{flex:1 1 auto}.form{gap:10px}.field input{min-height:46px}}
 /* телефоны с низким видимым экраном (iPhone SE, Safari с панелями, ≤800px): ужимаем слайды 2–3, чтобы дека работала */
@@ -432,7 +437,8 @@ html.deck-on .s-work.is-active .panel{animation:panel-in 1s var(--ease) both;ani
   .big-links{margin-top:12px}.big-link{font-size:22px}
   .form{padding:16px;gap:6px}.form-title{font-size:15px;margin:0}
   .form .field{padding-top:14px}.form .field label{top:26px}
-  .s-contact{padding-bottom:44px}.legal{bottom:14px}
+  .s-contact{padding-top:86px;padding-bottom:max(16px,env(safe-area-inset-bottom))}  /* шапка ~80px: «03 / Контакты» не под логотипом */
+  .form-sla{display:none}.form-trust{font-size:10px}
 }
 /* контакты: форма выезжает справа после шторки */
 html.deck-on .s-contact.is-active .form{animation:form-in 1s var(--ease) .55s both}
@@ -474,6 +480,7 @@ html.deck-on .is-active .ghost-num{transform:none;opacity:1}
 .form .field input.bad{border-bottom-color:#F0705A}
 .form .field input.bad + label{color:#F0705A}
 .form .field input.bad ~ .field-msg{height:18px;margin-top:6px}
+.form .field.empty input.bad ~ .field-msg{height:0;margin:0}  /* пустое поле: красной линии и подписи достаточно, форма не растёт */
 .consent.bad{color:#F0705A}
 .form-status a{color:var(--accent)}
 .form .field input:user-invalid{border-bottom-color:#F0705A}

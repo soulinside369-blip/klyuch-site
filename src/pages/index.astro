@@ -110,10 +110,10 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
           <h2><span class="ln"><Split text={contact.titleA} class="sh" /></span><span class="ln acc"><Split text={contact.titleB} class="sh" start={contact.titleA.length} /></span></h2>
           <p class="lead reveal">{contact.lead}</p>
           <div class="big-links reveal">
-            <a href={brand.telegram} rel="noopener" class="big-link" data-magnetic>Telegram <i>↗</i></a>
+            <a href={brand.telegram} rel="noopener" class="big-link" data-magnetic>Telegram <i><svg class="arr" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 12 12 4M5.5 4H12v6.5" stroke="currentColor" stroke-width="1.8"/></svg></i></a>
             <a href={brand.phoneHref} class="mid-link mid-phone">{brand.phone}</a>
             <a href={brand.telegram2} rel="noopener" class="mid-link mid-tg2">{brand.telegram2Label}</a>
-            {reviews.map((r) => <a href={r.url} rel="noopener" class="mid-link">{r.label} ↗</a>)}
+            {reviews.map((r) => <a href={r.url} rel="noopener" class="mid-link">{r.label} ↗︎</a>)}
             {!brand.email.startsWith('[') && <a href={`mailto:${brand.email}`} class="mid-link mid-mail">{brand.email}</a>}
           </div>
         </div>
@@ -131,6 +131,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
           <button type="submit" class="btn btn-primary" data-magnetic>Жду звонка</button>
           <p class="form-trust">{contact.trust.join(' · ')}</p>
           <div class="form-status" role="status" aria-live="polite"></div>
+          <p class="form-legal">© {new Date().getFullYear()} {brand.name} · <a href={`${B}privacy/`}>Политика ПДн</a></p>
         </form>
       </div>
       <div class="legal">© {new Date().getFullYear()} {brand.name}{!brand.legal.startsWith('[') && ` · ${brand.legal}`} · <a href={`${B}privacy/`}>Политика ПДн</a></div>
@@ -225,17 +226,20 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
     // Подгонка под экран: если слайд выше видимой области (панели Safari, низкий телефон), его содержимое
     // уменьшается (zoom), а не выключается режим презентации. Раньше дека выключалась → вёрстка «ехала», свайп не работал.
     const MIN_FIT = 0.68;
+    // Видимая высота: на iOS плавающая панель Safari перекрывает низ — visualViewport честнее innerHeight.
+    const viewH = () => Math.min(innerHeight, window.visualViewport && !typing() ? visualViewport.height : innerHeight);
+    const fitOne = (s: HTMLElement, floor = 0) => {
+      const inner = s.querySelector<HTMLElement>('.slide-inner')!;
+      inner.style.removeProperty('zoom');
+      const cs = getComputedStyle(s);
+      const avail = viewH() - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+      const k = Math.min(1, avail / inner.scrollHeight);
+      if (k < 0.995) inner.style.zoom = (Math.floor(Math.max(k, floor) * 1000) / 1000).toFixed(3);
+      return k;
+    };
     const fits = () => {
       let worst = 1;
-      slides.forEach((s) => {
-        const inner = s.querySelector<HTMLElement>('.slide-inner')!;
-        inner.style.removeProperty('zoom');
-        const cs = getComputedStyle(s);
-        const avail = window.innerHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
-        const k = Math.min(1, avail / inner.scrollHeight);
-        worst = Math.min(worst, k);
-        if (k < 0.995) inner.style.zoom = (Math.floor(k * 1000) / 1000).toFixed(3);
-      });
+      slides.forEach((s) => { worst = Math.min(worst, fitOne(s)); });
       if (worst < MIN_FIT) slides.forEach((s) => s.querySelector<HTMLElement>('.slide-inner')!.style.removeProperty('zoom'));
       return worst >= MIN_FIT;
     };
@@ -256,6 +260,12 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
       st.setProperty('--ks', `${k}px`); st.setProperty('--kx', `${innerWidth / 2}px`);
       st.setProperty('--ky', `${top + k * 0.4}px`);
     };
+    // Содержимое выросло (ошибки формы, статус, раскрытая панель) — пересчитать масштаб только этого слайда.
+    if ('ResizeObserver' in window) {
+      let rq = 0;
+      const ro = new ResizeObserver(() => { cancelAnimationFrame(rq); rq = requestAnimationFrame(() => { if (on) slides.forEach((s) => { if (s.classList.contains('s-contact')) fitOne(s, MIN_FIT); }); }); });
+      document.querySelectorAll('.s-contact .form').forEach((f) => ro.observe(f));
+    }
     function apply() {
       if (typing()) return;
       root.classList.remove('deck-on');
@@ -493,7 +503,8 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
       const consent = form.querySelector<HTMLInputElement>('input[name="consent"]');
       const mark = (el: HTMLInputElement) => { const bad = !el.checkValidity();
         const msg = el.parentElement?.querySelector<HTMLElement>('.field-msg');
-        if (msg) { msg.dataset.hint ??= msg.textContent || ''; msg.textContent = el.value.trim() ? msg.dataset.hint : 'Заполните поле'; }
+        if (msg) { msg.dataset.hint ??= msg.textContent || ''; msg.textContent = msg.dataset.hint; }
+        el.parentElement?.classList.toggle('empty', !el.value.trim());
         (el.type === 'checkbox' ? el.closest('.consent')! : el).classList.toggle('bad', bad); return !bad; };
       inputs.forEach((el) => {
         el.addEventListener('blur', () => { if (el.value) mark(el); });
@@ -503,7 +514,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
       const showFallback = () => {
         if (!status) return;
         const tg = form.dataset.tg || '';
-        status.innerHTML = 'Это демо-версия сайта — заявки здесь не принимаются. ' + (tg.length > 13 ? `<a href="${tg}" rel="noopener">Напишите нам в Telegram ↗</a>` : 'Контакты появятся при запуске.');
+        status.innerHTML = 'Это демо-версия сайта — заявки здесь не принимаются. ' + (tg.length > 13 ? `<a href="${tg}" rel="noopener">Напишите нам в Telegram ↗\uFE0E</a>` : 'Контакты появятся при запуске.');
       };
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -511,7 +522,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
         if (bad.length) {
           feel('error'); goal('form_error');
           if (status) status.textContent = bad[0] === consent ? 'Отметьте согласие на обработку данных.' : 'Проверьте выделенные поля.';
-          bad[0].focus({ preventScroll: true });
+          if (!matchMedia('(pointer: coarse)').matches) bad[0].focus({ preventScroll: true });
           return;
         }
         const btn = form.querySelector<HTMLButtonElement>('button[type="submit"]');
