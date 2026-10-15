@@ -142,7 +142,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
   </button>
 
   <script>
-    import { feel, setSound, isSoundOn, soundPreference, armSoundFromPreference, playTrailerScore } from '../scripts/feel';
+    import { feel, setSound, isSoundOn, soundPreference, armSoundFromPreference, playTrailerScore, soundUnlocked } from '../scripts/feel';
     const root = document.documentElement;
     const deck = document.getElementById('deck')!;
     const slides = [...document.querySelectorAll<HTMLElement>('.slide')];
@@ -152,6 +152,8 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
     let i = 0, lock = false, on = false, playing = root.classList.contains('trailer-on');
 
     /* ---------- трейлер ---------- */
+    let soundReady: () => void = () => {};
+    let soundReady0: () => void = () => {};
     const trailerEl = document.getElementById('trailer')!;
     const endTrailer = () => {
       if (!playing) return; playing = false;
@@ -166,20 +168,41 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
       const begin = () => { if (root.classList.contains('tr-go')) return; root.classList.add('tr-go'); goAt = performance.now(); tm = window.setTimeout(endTrailer, 7200); };
       Promise.race([document.fonts?.ready, new Promise((r) => setTimeout(r, 700))]).then(begin);
       const skip = () => { clearTimeout(tm); endTrailer(); };
-      // «Смотреть со звуком»: нажатие = разрешение браузера на звук; партитура догоняет трейлер с текущего места.
+      // Звук по умолчанию включён: партитура стартует, как только браузер разрешит звук (первое касание/клик/клавиша).
+      // Первое касание трейлера — это и есть «включить звук», а не «пропустить». Пропуск — кнопкой, колесом, клавишей, свайпом.
       const soundBtn0 = document.getElementById('tr-sound')!;
       const t0 = () => (root.classList.contains('tr-go') ? (performance.now() - goAt) / 1000 : 0);
+      const CUTS = [0, 1, 2, 3, 4].map((k) => 0.3 + k * 0.6);
+      let scored = false;
+      const startScore = () => { if (scored || !playing || !isSoundOn()) return; scored = true; playTrailerScore(t0(), CUTS); paintTr(); };
+      const paintTr = () => {
+        const on = isSoundOn() && soundUnlocked();
+        soundBtn0.classList.toggle('on', on); soundBtn0.classList.toggle('wait', isSoundOn() && !soundUnlocked());
+        soundBtn0.querySelector('.ts-d')!.textContent = on ? 'Выключить звук' : isSoundOn() ? 'Нажмите — включится звук' : 'Смотреть со звуком';
+        soundBtn0.querySelector('.ts-m')!.textContent = on ? 'Без звука' : isSoundOn() ? 'Нажмите — звук' : 'Со звуком';
+      };
       soundBtn0.addEventListener('click', (e) => {
         e.stopPropagation();
-        setSound(true); document.getElementById('sound-toggle')?.setAttribute('aria-pressed', 'true');
-        playTrailerScore(t0(), [0, 1, 2, 3, 4].map((k) => 0.3 + k * 0.6));
-        soundBtn0.classList.add('on');
+        const v = !(isSoundOn() && soundUnlocked());
+        setSound(v); document.getElementById('sound-toggle')?.setAttribute('aria-pressed', String(v));
+        if (v) { scored = false; startScore(); }
+        paintTr();
       });
+      soundReady = () => { startScore(); paintTr(); };
+      soundReady0 = paintTr;
+      paintTr();
       const notSound = (e: Event) => !(e.target instanceof Element && e.target.closest('.tr-sound'));
-      document.getElementById('tr-skip')!.addEventListener('click', skip);
-      trailerEl.addEventListener('click', (e) => notSound(e) && skip());
+      // Касание «съедается» (не пропускает трейлер), только если звук ещё не играл: оно его и включает.
+      let swallow = false;
+      // Состояние снимаем ДО того, как это же касание включит звук (слушатель на window в фазе захвата, зарегистрирован раньше).
+      const mark = (e: Event) => { if (e.target instanceof Node && trailerEl.contains(e.target) && soundPreference() && !soundUnlocked()) swallow = true; };
+      addEventListener('pointerdown', mark, true); addEventListener('touchstart', mark, { capture: true, passive: true });
+      document.getElementById('tr-skip')!.addEventListener('click', (e) => { e.stopPropagation(); skip(); });
+      trailerEl.addEventListener('click', (e) => { if (!notSound(e)) return; if (swallow) { swallow = false; return; } skip(); });
       addEventListener('wheel', () => playing && skip(), { passive: true });
-      addEventListener('touchstart', (e) => playing && notSound(e) && skip(), { passive: true });
+      let ty0 = 0;
+      addEventListener('touchstart', (e) => { ty0 = e.touches[0].clientY; }, { passive: true });
+      addEventListener('touchend', (e) => { if (playing && Math.abs(e.changedTouches[0].clientY - ty0) > 50) skip(); }, { passive: true });
       window.addEventListener('keydown', (e) => { if (playing && notSound(e)) { e.preventDefault(); skip(); } });
     } else { trailerEl.remove(); }
 
@@ -385,9 +408,9 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
 
     /* ---------- звук ---------- */
     const soundBtn = document.getElementById('sound-toggle')!;
-    const paintSound = () => { soundBtn.setAttribute('aria-pressed', String(isSoundOn() || soundPreference())); };
+    const paintSound = () => { soundBtn.setAttribute('aria-pressed', String(isSoundOn())); };
     soundBtn.addEventListener('click', () => { const v = !(isSoundOn()); setSound(v); paintSound(); if (v) feel('press'); });
-    armSoundFromPreference(); paintSound();
+    armSoundFromPreference(() => { soundReady(); paintSound(); }); paintSound(); soundReady0();
 
     /* ---------- нажатия кнопок ---------- */
     document.querySelectorAll<HTMLElement>('.btn, .big-link, .keyhole, .dot').forEach((el) =>

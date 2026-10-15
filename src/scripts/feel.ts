@@ -109,18 +109,31 @@ const SOUNDS: Record<Feel | 'toggle', (dir?: number) => void> = {
   toggle: () => { tone(880, 0.07, { gain: 0.08 }); tone(1320, 0.1, { gain: 0.06, delay: 0.06 }); },
 };
 
-export function soundPreference() { try { return localStorage.getItem('ks_sound') === '1'; } catch { return false; } }
+// Звук включён по умолчанию (решение владельца 16.10); выключенный человеком — запоминается ('0').
+export function soundPreference() { try { return localStorage.getItem('ks_sound') !== '0'; } catch { return true; } }
 export function isSoundOn() { return soundOn; }
 export function setSound(v: boolean) {
   soundOn = v;
   try { localStorage.setItem('ks_sound', v ? '1' : '0'); } catch {}
+  if (master) master.gain.value = v ? 0.32 : 0;          // выключение глушит и уже запущенную партитуру
   if (v) { audio(); SOUNDS.toggle(); }
 }
 // Сохранённое «включено» оживает только после первого действия человека (политика автозапуска).
-export function armSoundFromPreference() {
+// Браузеры не дают сайту звучать до первого действия человека. Поэтому: пробуем сразу (Chrome иногда разрешает
+// сайтам, где человек уже бывал), иначе звук оживает от первого касания, клика или клавиши — без отдельного вопроса.
+// onReady вызывается один раз, когда звук реально заработал.
+let unlocked = false;
+export function soundUnlocked() { return unlocked; }
+export function armSoundFromPreference(onReady?: () => void) {
   if (!soundPreference()) return;
-  const arm = () => { soundOn = true; audio(); removeEventListener('pointerdown', arm); removeEventListener('keydown', arm); };
-  addEventListener('pointerdown', arm, { once: true }); addEventListener('keydown', arm, { once: true });
+  soundOn = true;
+  const ready = () => { if (unlocked) return; unlocked = true; onReady?.(); };
+  try { const c = audio(); if (c.state === 'running') { ready(); return; } c.onstatechange = () => { if (c.state === 'running') ready(); }; } catch { return; }
+  const arm = () => {
+    try { audio().resume().then(() => { if (ctx!.state === 'running') ready(); }); } catch {}
+    ['pointerdown', 'keydown', 'touchend'].forEach((t) => removeEventListener(t, arm, true));
+  };
+  ['pointerdown', 'keydown', 'touchend'].forEach((t) => addEventListener(t, arm, { capture: true }));
 }
 
 /** Партитура трейлера (синтез, без файлов). elapsed — сколько секунд трейлер уже идёт: звук включили посреди.
