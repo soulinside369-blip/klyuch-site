@@ -6,13 +6,12 @@ import '@fontsource/unbounded/cyrillic-700.css';
 import '@fontsource/unbounded/latin-700.css';
 import '@fontsource/manrope/cyrillic-400.css';
 import '@fontsource/manrope/latin-400.css';
-import '@fontsource/manrope/cyrillic-600.css';
-import '@fontsource/manrope/latin-600.css';
 import '@fontsource/manrope/cyrillic-700.css';
 import '@fontsource/manrope/latin-700.css';
 import '@fontsource/jetbrains-mono/cyrillic-400.css';
 import '@fontsource/jetbrains-mono/latin-400.css';
 import unbounded700 from '@fontsource/unbounded/files/unbounded-cyrillic-700-normal.woff2?url';
+import unbounded500 from '@fontsource/unbounded/files/unbounded-cyrillic-500-normal.woff2?url';
 import manrope400 from '@fontsource/manrope/files/manrope-cyrillic-400-normal.woff2?url';
 import '../styles/global.css';
 import { brand } from '../data/site';
@@ -52,6 +51,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
   <link rel="icon" href={`${B}favicon.svg`} type="image/svg+xml">
   <!-- Шрифты — локально (@fontsource): без запросов к Google (152-ФЗ, скорость в РФ). Заголовок и текст — заранее. -->
   <link rel="preload" href={unbounded700} as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href={unbounded500} as="font" type="font/woff2" crossorigin>
   <link rel="preload" href={manrope400} as="font" type="font/woff2" crossorigin>
   <slot name="head" />
   <script type="application/ld+json" set:html={JSON.stringify([org, ...schema])} />

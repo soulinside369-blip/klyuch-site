@@ -16,12 +16,15 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
 >
   <Fragment slot="head">
   <script is:inline>
-      // До отрисовки: трейлер — один раз за визит и не при «уменьшить движение»; ?intro — показать принудительно.
+      // До отрисовки: трейлер — раз в 7 дней (вернувшийся клиент сразу видит главный экран), не при «уменьшить движение»; ?intro — показать принудительно.
       (function () {
         var d = document.documentElement, show = true;
-        try { show = !sessionStorage.getItem('ks_trailer') || /[?&]intro/.test(location.search); } catch (e) {}
+        try { show = Date.now() - (+localStorage.getItem('ks_trailer_at') || 0) > 6048e5 && !sessionStorage.getItem('ks_trailer'); } catch (e) {}
+        if (/[?&]intro/.test(location.search)) show = true;
         if (matchMedia('(prefers-reduced-motion: reduce)').matches || location.hash) show = false;
         d.classList.add(show ? 'trailer-on' : 'trailer-off');
+        // Деку включаем до первой отрисовки (иначе экран «прыгает» — CLS); скрипт ниже проверит, влезают ли слайды, и при нужде выключит.
+        if (innerHeight >= 600) { d.classList.add('deck-on'); d.dataset.slide = '0'; }
       })();
     </script>
   </Fragment>
@@ -67,11 +70,11 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
         <ul class="guarantees reveal" aria-label="Гарантии">{hero.guarantees.map((g) => <li>{g}</li>)}</ul>
         <div class="proof reveal">
           <span class="proof-label">{hero.proofLabel}</span>
-          <a href="#work" class="proof-list" data-go="1" aria-label={`${hero.proofLabel}: ${publishedCases.map((c) => c.client).join(', ')}. Смотреть портфолио`}>
-            {publishedCases.map((c) => <span class="proof-name" style={`--brand:${c.theme.bg.startsWith('#') ? c.theme.bg : '#21A038'}`}>{c.client.replace('ХК «Спартак» Москва', '«Спартак»')}</span>)}
+          <a href="#work" class="proof-list" data-go="1">
+            {publishedCases.map((c) => <span class="proof-name" style={`--brand:${c.theme.bg.startsWith('#') ? c.theme.bg : '#21A038'}`}>{c.client.replace('ХК «Спартак» Москва', '«Спартак»')} </span>)}<span class="sr-only">— смотреть портфолио</span>
           </a>
         </div>
-        <p class="speed reveal" id="speed" hidden><span class="speed-dot" aria-hidden="true"></span><span id="speed-text"></span></p>
+        <p class="speed reveal" id="speed" aria-hidden="true"><span class="speed-dot" aria-hidden="true"></span><span id="speed-text"></span></p>
       </div>
       <div class="marquee" aria-hidden="true"><div class="marquee-track">
         {[0, 1].map(() => hero.directions.map((d) => <span>{d}</span>))}
@@ -93,7 +96,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
     </section>
 
     <!-- скважина: над портфолио, пока мы на первом слайде -->
-    <button class="keyhole" type="button" data-go="1" aria-label="Заглянуть в портфолио">
+    <button class="keyhole" type="button" data-go="1" aria-label="Загляните внутрь — портфолио">
       <svg viewBox="0 0 100 100" fill="none" aria-hidden="true"><path d={keyholePath} stroke="#E8B04B" stroke-width="1.2" vector-effect="non-scaling-stroke"/></svg>
       <span class="keyhole-label">Загляните внутрь ↓</span>
     </button>
@@ -152,7 +155,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
     const trailerEl = document.getElementById('trailer')!;
     const endTrailer = () => {
       if (!playing) return; playing = false;
-      try { sessionStorage.setItem('ks_trailer', '1'); } catch {}
+      try { sessionStorage.setItem('ks_trailer', '1'); localStorage.setItem('ks_trailer_at', String(Date.now())); } catch {}
       root.classList.add('trailer-out');
       setTimeout(() => { root.classList.remove('trailer-on', 'trailer-out'); root.classList.add('trailer-off'); trailerEl.remove(); }, 1300);
       startRotator(); setTimeout(() => root.classList.add('hero-in'), 250);
@@ -177,11 +180,25 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
       return inner.scrollHeight + parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom) <= window.innerHeight + 1;
     });
     const typing = () => { const a = document.activeElement; return !!a && /INPUT|TEXTAREA|SELECT/.test(a.tagName); };
+    // Телефон: скважина встаёт в свободное место между шапкой и текстом (текст прижат к низу и его высота разная),
+    // иначе она ложится поверх заголовка. Те же --kx/--ky/--ks использует маска перехода и растворение трейлера.
+    const placeKey = () => {
+      const st = root.style;
+      if (innerWidth > 900 || !on) { ['--kx', '--ky', '--ks'].forEach((p) => st.removeProperty(p)); root.classList.remove('no-key'); return; }
+      const barB = document.querySelector('.bar')!.getBoundingClientRect().bottom;
+      const heroT = document.querySelector('.s-start .slide-inner')!.getBoundingClientRect().top;
+      const room = heroT - barB - 12;
+      const k = Math.max(64, Math.min(170, innerWidth * 0.42, room * 0.95));
+      root.classList.toggle('no-key', room < 64);
+      st.setProperty('--ks', `${k}px`); st.setProperty('--kx', `${innerWidth / 2}px`);
+      st.setProperty('--ky', `${barB + 6 + (room - k) / 2 + k * 0.4}px`);
+    };
     function apply() {
       if (typing()) return;
       root.classList.remove('deck-on');
       on = fits();
       root.classList.toggle('deck-on', on);
+      placeKey();
       go(i, true);
     }
     function go(n: number, instant = false) {
@@ -329,8 +346,10 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
       const ms = paint ? paint.startTime : nav ? nav.domContentLoadedEventEnd : 0;
       if (!ms || ms > 1800) return;                                   // хвастаемся только реальной скоростью
       const sec = (ms / 1000).toFixed(1).replace('.', ',');
-      document.getElementById('speed-text')!.textContent = `Этот сайт открылся у вас за ${sec} с — так же быстро сделаем ваш`;
-      document.getElementById('speed')!.hidden = false;
+      document.getElementById('speed-text')!.textContent = innerWidth <= 640
+        ? `Открылся у вас за ${sec} с — так же сделаем ваш`         // на телефоне — в одну строку
+        : `Этот сайт открылся у вас за ${sec} с — так же быстро сделаем ваш`;
+      const sp = document.getElementById('speed')!; sp.classList.add('on'); sp.removeAttribute('aria-hidden');
     }, 0));
 
     /* ---------- звук ---------- */
