@@ -10,6 +10,8 @@
   --soft:cubic-bezier(.22,1,.36,1);
   /* замочная скважина: центр круга (--kx,--ky) и размер (--ks) — общие для рисунка и маски */
   --ks:min(58vh,36vw); --kx:71vw; --ky:44vh;
+  /* конечный размер маски-скважины: не меньше 400vmax, иначе маленькая скважина на телефоне обрезает края слайда */
+  --kz:max(calc(var(--ks)*22),600vmax);
   --keyhole:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M43.5 56.8A18 18 0 1 1 56.5 56.8L63 86H37Z'/%3E%3C/svg%3E");
   --mx:70vw; --my:40vh;
 }
@@ -70,6 +72,8 @@ html.trailer-on:not(.tr-go) .trailer *{animation-play-state:paused!important}
 .tr-a,.tr-b{font:500 clamp(26px,4vw,60px)/1.1 var(--display);letter-spacing:-.5px}
 .tr-b{color:var(--accent)}
 .tr-cut{font:700 clamp(46px,11vw,176px)/1 var(--display);letter-spacing:-3px}
+/* длинное слово («Автоматизация») не должно вылезать за экран телефона: размер по длине слова */
+.tr-cut{font-size:min(clamp(46px,11vw,176px),calc(92vw / (var(--len,8) * .78)))}
 .tr-cut-1{color:var(--accent)}
 .tr-cut-2 .ch{-webkit-text-stroke:1.5px var(--text);color:transparent}
 .tr-progress{position:absolute;left:50%;top:calc(50% + clamp(40px,7vw,110px));width:min(520px,60vw);height:2px;margin-left:calc(min(520px,60vw) / -2);background:var(--accent);transform:scaleX(0);transform-origin:left;
@@ -88,12 +92,12 @@ html.trailer-on:not(.tr-go) .trailer *{animation-play-state:paused!important}
 .trailer-out .trailer{
   -webkit-mask:linear-gradient(#000 0 0),var(--keyhole) no-repeat;
   -webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) exclude,var(--keyhole) no-repeat;
-  -webkit-mask-size:100% 100%,calc(var(--ks)*22) calc(var(--ks)*22);mask-size:100% 100%,calc(var(--ks)*22) calc(var(--ks)*22);
-  -webkit-mask-position:0 0,calc(var(--kx) - var(--ks)*11) calc(var(--ky) - var(--ks)*8.8);mask-position:0 0,calc(var(--kx) - var(--ks)*11) calc(var(--ky) - var(--ks)*8.8);
+  -webkit-mask-size:100% 100%,var(--kz) var(--kz);mask-size:100% 100%,var(--kz) var(--kz);
+  -webkit-mask-position:0 0,calc(var(--kx) - var(--kz)*.5) calc(var(--ky) - var(--kz)*.4);mask-position:0 0,calc(var(--kx) - var(--kz)*.5) calc(var(--ky) - var(--kz)*.4);
   animation:iris 1.2s var(--zoom) forwards}
 @keyframes iris{
   from{-webkit-mask-size:100% 100%,0 0;mask-size:100% 100%,0 0;-webkit-mask-position:0 0,var(--kx) calc(var(--ky) - 0px);mask-position:0 0,var(--kx) var(--ky)}
-  to{-webkit-mask-size:100% 100%,calc(var(--ks)*22) calc(var(--ks)*22);mask-size:100% 100%,calc(var(--ks)*22) calc(var(--ks)*22);-webkit-mask-position:0 0,calc(var(--kx) - var(--ks)*11) calc(var(--ky) - var(--ks)*8.8);mask-position:0 0,calc(var(--kx) - var(--ks)*11) calc(var(--ky) - var(--ks)*8.8)}}
+  to{-webkit-mask-size:100% 100%,var(--kz) var(--kz);mask-size:100% 100%,var(--kz) var(--kz);-webkit-mask-position:0 0,calc(var(--kx) - var(--kz)*.5) calc(var(--ky) - var(--kz)*.4);mask-position:0 0,calc(var(--kx) - var(--kz)*.5) calc(var(--ky) - var(--kz)*.4)}}
 @keyframes tr-line{to{transform:scaleX(1)}}
 @keyframes tr-fade{to{opacity:0}}
 @keyframes tr-in{from{opacity:0;filter:blur(12px);letter-spacing:.08em}to{opacity:1;filter:blur(0)}}
@@ -110,7 +114,7 @@ html.trailer-on:not(.tr-go) .trailer *{animation-play-state:paused!important}
 .slide-inner{position:relative;z-index:2;width:100%;max-width:1320px;margin:0 auto}
 .keyhole{display:none}
 
-html.deck-on,html.deck-on body{height:100%;overflow:hidden}
+html.deck-on,html.deck-on body{height:100%;overflow:hidden;overscroll-behavior:none}
 html.deck-on .deck{position:relative;height:100vh;height:100dvh;overflow:hidden}
 html.deck-on .slide{position:absolute;inset:0;height:100%}
 html.deck-on .s-start{z-index:1}
@@ -127,8 +131,8 @@ html.deck-on .s-work{padding:0;
   transition:-webkit-mask-size 1.25s var(--zoom),-webkit-mask-position 1.25s var(--zoom),mask-size 1.25s var(--zoom),mask-position 1.25s var(--zoom),filter 1.25s var(--zoom);
   filter:brightness(.62) saturate(.9)}
 html.deck-on .deck:not([data-i="0"]) .s-work{
-  -webkit-mask-size:calc(var(--ks)*22) calc(var(--ks)*22);mask-size:calc(var(--ks)*22) calc(var(--ks)*22);
-  -webkit-mask-position:calc(var(--kx) - var(--ks)*11) calc(var(--ky) - var(--ks)*8.8);mask-position:calc(var(--kx) - var(--ks)*11) calc(var(--ky) - var(--ks)*8.8);
+  -webkit-mask-size:var(--kz) var(--kz);mask-size:var(--kz) var(--kz);
+  -webkit-mask-position:calc(var(--kx) - var(--kz)*.5) calc(var(--ky) - var(--kz)*.4);mask-position:calc(var(--kx) - var(--kz)*.5) calc(var(--ky) - var(--kz)*.4);
   filter:none}
 .zoom{width:100%;display:flex;align-items:center}
 html.deck-on .zoom{position:absolute;inset:0;padding:clamp(76px,11vh,104px) calc(var(--pad) + 24px) clamp(56px,9vh,84px) var(--pad);transform-origin:var(--kx) var(--ky);transform:scale(1.35);transition:transform 1.25s var(--zoom)}
@@ -136,6 +140,8 @@ html.deck-on .deck:not([data-i="0"]) .zoom{transform:none}
 /* свет за дверью: пока смотрим в скважину — тёплое сияние, при входе растворяется */
 html.deck-on .s-work::after{content:'';position:absolute;inset:0;z-index:5;pointer-events:none;background:radial-gradient(circle at var(--kx) calc(var(--ky) + var(--ks)*.1),#FFF1CF 0%,#F3C976 calc(var(--ks)*.12),#C98A22 calc(var(--ks)*.3),#3a2606 calc(var(--ks)*.62),#0B0C0E calc(var(--ks)*.95));transition:opacity .9s ease .15s}
 html.deck-on .deck:not([data-i="0"]) .s-work::after{opacity:0}
+/* после входа маска снимается совсем: ничего не подрезает и не грузит видеочип телефона */
+html.deck-on .deck.k-open .s-work{-webkit-mask:none;mask:none;transition:none}
 /* первый слайд уходит вглубь */
 html.deck-on .s-start .slide-inner,html.deck-on .s-start .marquee{transition:transform 1.25s var(--zoom),opacity 1s ease}
 html.deck-on .deck:not([data-i="0"]) .s-start .slide-inner{transform:scale(.9);opacity:0}
@@ -236,6 +242,7 @@ html.deck-on .is-active .sh .ch{transform:none}
   html.deck-on .s-start{padding-bottom:calc(122px + env(safe-area-inset-bottom))}
   .keyhole-label{display:none}
   html.no-key .keyhole,html.no-key .s-start::before{display:none}
+  html.no-key .deck[data-i="0"] .s-work{visibility:hidden}
   .hero h1{font-size:clamp(36px,11vw,60px)}
   .hero .lead{font-size:15px}
   .guarantees{display:none}

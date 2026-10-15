@@ -37,7 +37,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
   <div class="trailer" id="trailer" aria-hidden="true">
     <div class="tr-line"></div>
     <!-- тайминги от старта (после загрузки шрифта): --t вход, --t2 уход, --st шаг волны по буквам -->
-    {trailer.cuts.map((w, k) => <p class={`tr tr-cut tr-cut-${k % 3} has-out`} style={`--t:${(0.3 + k * trailer.step).toFixed(2)}s;--t2:${(0.3 + k * trailer.step + trailer.step * 0.7).toFixed(2)}s;--st:14ms;--st2:8ms;--di:.3s;--do:.2s`}><Split text={w} /></p>)}
+    {trailer.cuts.map((w, k) => <p class={`tr tr-cut tr-cut-${k % 3} has-out`} style={`--len:${w.length};--t:${(0.3 + k * trailer.step).toFixed(2)}s;--t2:${(0.3 + k * trailer.step + trailer.step * 0.7).toFixed(2)}s;--st:14ms;--st2:8ms;--di:.3s;--do:.2s`}><Split text={w} /></p>)}
     <div class="tr-progress"></div>
     <p class="tr tr-c tr-soft" style="--t:3.7s;--st:16ms;--di:.6s"><Split text={trailer.proof} /></p>
     <div class="tr-key">
@@ -174,11 +174,23 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
     } else { trailerEl.remove(); }
 
     /* ---------- дека ---------- */
-    const fits = () => slides.every((s) => {
-      const inner = s.querySelector<HTMLElement>('.slide-inner')!;
-      const cs = getComputedStyle(s);
-      return inner.scrollHeight + parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom) <= window.innerHeight + 1;
-    });
+    // Подгонка под экран: если слайд выше видимой области (панели Safari, низкий телефон), его содержимое
+    // уменьшается (zoom), а не выключается режим презентации. Раньше дека выключалась → вёрстка «ехала», свайп не работал.
+    const MIN_FIT = 0.68;
+    const fits = () => {
+      let worst = 1;
+      slides.forEach((s) => {
+        const inner = s.querySelector<HTMLElement>('.slide-inner')!;
+        inner.style.removeProperty('zoom');
+        const cs = getComputedStyle(s);
+        const avail = window.innerHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+        const k = Math.min(1, avail / inner.scrollHeight);
+        worst = Math.min(worst, k);
+        if (k < 0.995) inner.style.zoom = (Math.floor(k * 1000) / 1000).toFixed(3);
+      });
+      if (worst < MIN_FIT) slides.forEach((s) => s.querySelector<HTMLElement>('.slide-inner')!.style.removeProperty('zoom'));
+      return worst >= MIN_FIT;
+    };
     const typing = () => { const a = document.activeElement; return !!a && /INPUT|TEXTAREA|SELECT/.test(a.tagName); };
     // Телефон: скважина встаёт в свободное место между шапкой и текстом (текст прижат к низу и его высота разная),
     // иначе она ложится поверх заголовка. Те же --kx/--ky/--ks использует маска перехода и растворение трейлера.
@@ -201,8 +213,14 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
       placeKey();
       go(i, true);
     }
+    let kTimer = 0;
     function go(n: number, instant = false) {
+      const was = i;
       i = Math.max(0, Math.min(slides.length - 1, n));
+      // Маска-скважина: снята, пока мы за дверью; перед возвратом на первый слайд — вернуть (в большом размере), потом сжать.
+      clearTimeout(kTimer);
+      if (i === 0 && deck.classList.contains('k-open')) { deck.classList.remove('k-open'); void deck.offsetWidth; }
+      if (i > 0) kTimer = window.setTimeout(() => deck.classList.add('k-open'), instant || was > 0 ? 0 : 1300);
       if (!on) { slides.forEach((s) => { s.classList.add('is-active'); s.removeAttribute('inert'); }); if (!instant) slides[i].scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' }); return; }
       if (instant) { root.classList.add('no-anim'); requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('no-anim'))); }
       deck.dataset.i = String(i); root.dataset.slide = String(i);
@@ -221,7 +239,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
       if (!on || playing) return false;
       const from = i; if (n === from || n < 0 || n >= slides.length) return false;
       lock = true; go(n); feelFor(from, n); setProgress(); root.classList.add('hint-used');
-      setTimeout(() => (lock = false), 1250); return true;
+      setTimeout(() => (lock = false), 900); return true;   // быстрый повторный свайп не «теряется»
     };
     // Один жест = один шаг: возвращает 'moved' | 'edge' | 'busy'.
     const step = (d: number) => {
