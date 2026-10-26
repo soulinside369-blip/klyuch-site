@@ -3,7 +3,23 @@
 Сайт уже собран и проверен. Для запуска нужны хостинг с PHP в России, домен, Telegram-бот и номер счётчика Метрики.
 Секреты (пароли, токен бота) в репозиторий и в чат не попадают — только в настройки хостинга и GitHub.
 
-## 1. Хостинг и домен
+## 0. Текущая схема (26.10.2026): Yandex Cloud, 0 ₽/мес
+
+Сайт — статика в Object Storage (бакет `xn--80aqcff3bzb5c.xn--p1ai` = айтиключ.рф), HTTPS — бесплатный Let's Encrypt из Certificate Manager,
+DNS — Cloud DNS (у регистратора Timeweb прописаны `ns1.yandexcloud.net`, `ns2.yandexcloud.net`). Выкладка — workflow
+«Выкладка в Yandex Cloud» при каждом пуше в main (секреты `YC_KEY_ID`, `YC_SECRET`). Почему не GitHub Pages: проверка DNS у GitHub
+зависает на российских доменах, сертификат не выпускается (сентябрь–октябрь 2026).
+
+Настройка один раз:
+1. Консоль Yandex Cloud → Object Storage → бакет с именем `xn--80aqcff3bzb5c.xn--p1ai`, публичный доступ на чтение объектов.
+   Вкладка «Веб-сайт» → «Хостинг», главная `index.html`, ошибка `404.html`.
+2. Сервисный аккаунт с ролью `storage.editor` → статический ключ доступа → в GitHub-секреты `YC_KEY_ID` и `YC_SECRET`.
+3. Cloud DNS → публичная зона `xn--80aqcff3bzb5c.xn--p1ai.` → ANAME на `xn--80aqcff3bzb5c.xn--p1ai.website.yandexcloud.net`, CNAME `www` туда же.
+   У регистратора (Timeweb) — сменить NS на `ns1.yandexcloud.net`, `ns2.yandexcloud.net`.
+4. Certificate Manager → сертификат Let's Encrypt для домена (проверка через DNS) → в бакете «HTTPS» выбрать его.
+5. Биллинг → бюджет с уведомлением (например, 50 ₽), чтобы не было сюрпризов.
+
+## 1. Хостинг и домен (вариант с PHP-хостингом)
 
 1. Хостинг с PHP 8+ и SSL в РФ: Timeweb, Beget, Selectel, Reg.ru — подойдёт самый простой тариф.
 2. Домен **айтиключ.рф** (куплен 26.10.2026; в настройках хостинга может понадобиться запись `xn--80aqcff3bzb5c.xn--p1ai`) направить на хостинг, включить бесплатный SSL (Let's Encrypt) — сайт должен открываться по `https://`.
