@@ -1,9 +1,9 @@
 import { defineConfig } from 'astro/config';
 
-// SITE_URL и BASE_PATH задаются при сборке для GitHub Pages (см. .github/workflows/pages.yml).
-// Для своего домена: SITE_URL=https://домен.ru, BASE_PATH не задавать.
+// Боевой домен — айтиключ.рф (куплен владельцем 26.10.2026). В URL — punycode, на экране — кириллица (brand.domain).
+// GitHub Pages собирается со своими SITE_URL/BASE_PATH (.github/workflows/pages.yml) и закрыт от индексации.
 export default defineConfig({
-  site: process.env.SITE_URL || 'https://klyuch.example',
+  site: process.env.SITE_URL || 'https://xn--80aqcff3bzb5c.xn--p1ai',
   base: process.env.BASE_PATH || '/',
   // Стили встраиваются в HTML: на мобильном это минус один блокирующий запрос (~0,7 с на 3G по Lighthouse).
   build: { inlineStylesheets: 'always' },

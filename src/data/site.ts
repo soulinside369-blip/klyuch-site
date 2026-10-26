@@ -4,6 +4,7 @@
 export const brand = {
   name: 'КЛЮЧ',
   tagline: 'IT-агентство полного цикла',
+  domain: 'айтиключ.рф',              // владелец, 26.10.2026; punycode xn--80aqcff3bzb5c.xn--p1ai
   phone: '+7 996 406-69-65',          // владелец, 16.10.2026
   phoneHref: 'tel:+79964066965',
   email: '[hello@домен.ru]',

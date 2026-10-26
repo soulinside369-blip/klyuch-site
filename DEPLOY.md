@@ -6,7 +6,7 @@
 ## 1. Хостинг и домен
 
 1. Хостинг с PHP 8+ и SSL в РФ: Timeweb, Beget, Selectel, Reg.ru — подойдёт самый простой тариф.
-2. Домен (например, `klyuch.ru`) направить на хостинг, включить бесплатный SSL (Let's Encrypt) — сайт должен открываться по `https://`.
+2. Домен **айтиключ.рф** (куплен 26.10.2026; в настройках хостинга может понадобиться запись `xn--80aqcff3bzb5c.xn--p1ai`) направить на хостинг, включить бесплатный SSL (Let's Encrypt) — сайт должен открываться по `https://`.
 3. В панели хостинга создать FTP-доступ к папке сайта (`public_html`).
 
 ## 2. Форма → Telegram
@@ -23,7 +23,7 @@
 
 ## 3. Выкладка
 
-Вариант А — вручную: `npm ci && SITE_URL=https://klyuch.ru npm run build`, залить содержимое `dist/` в `public_html`.
+Вариант А — вручную: `npm ci && npm run build`, залить содержимое `dist/` в `public_html`.
 
 Вариант Б — из GitHub одной кнопкой:
 1. GitHub → Settings → Secrets and variables → Actions → добавить секреты `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD`, `SITE_URL`.

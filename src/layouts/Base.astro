@@ -18,7 +18,9 @@ import { brand, analytics } from '../data/site';
 const ym = /^\d+$/.test(analytics.metrikaId) ? analytics.metrikaId : '';
 
 interface Props { title: string; description: string; noindex?: boolean; schema?: Record<string, unknown>[]; }
-const { title, description, noindex = false, schema = [] } = Astro.props;
+const { title, description, noindex: hide = false, schema = [] } = Astro.props;
+// Превью на GitHub Pages не индексируется: боевая копия — только на айтиключ.рф (иначе дубль в поиске).
+const noindex = hide || !!Astro.site?.host.endsWith('github.io');
 const canonical = new URL(Astro.url.pathname, Astro.site).href;
 const org = {
   '@context': 'https://schema.org', '@type': 'ProfessionalService', name: brand.name, url: Astro.site?.href,
