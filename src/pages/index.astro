@@ -5,14 +5,14 @@
 import Base from '../layouts/Base.astro';
 import CasePanel from '../components/CasePanel.astro';
 import Split from '../components/Split.astro';
-import { brand, hero, trailer, publishedCases, contact, reviews } from '../data/site';
-const slides = [{ id: 'start', label: 'Старт' }, { id: 'work', label: 'Портфолио' }, { id: 'contact', label: 'Контакты' }];
+import { brand, hero, trailer, publishedCases, contact, reviews, team, work, services, process } from '../data/site';
+const slides = [{ id: 'start', label: 'Старт' }, { id: 'work', label: 'Портфолио' }, { id: 'team', label: 'Команда' }, { id: 'services', label: 'Направления' }, { id: 'process', label: 'Процесс' }, { id: 'contact', label: 'Контакты' }];
 const keyholePath = 'M43.5 56.8A18 18 0 1 1 56.5 56.8L63 86H37Z';
 const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/';
 ---
 <Base
-  title="КЛЮЧ — IT-агентство полного цикла: приложения, сайты, реклама, автоматизация"
-  description="Открываем рост бизнеса: приложения, сайты, реклама и автоматизация. Проекты от 30 тыс. до 25 млн ₽. Работали для Циан, Toshiba, Сбербанка, ХК «Спартак»."
+  title="КЛЮЧ — IT-команда полного цикла: сайты, IT-решения, реклама, автоматизация и ИИ"
+  description={`Сайты, IT-решения, реклама и трафик, автоматизация и ИИ — одной командой. ${team.period}: ${team.facts.map((f) => `${f.n} ${f.label}`).join(', ')}. Проекты от ${hero.range.from} до ${hero.range.to}.`}
 >
   <Fragment slot="head">
   <script is:inline>
@@ -65,14 +65,14 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
         </h1>
         <p class="lead reveal">{hero.lead}</p>
         <div class="actions reveal">
-          <a href="#contact" class="btn btn-primary" data-go="2" data-magnetic>{hero.cta}</a>
+          <a href="#contact" class="btn btn-primary" data-go="contact" data-magnetic>{hero.cta}</a>
           <a href="#work" class="btn btn-ghost" data-go="1" data-magnetic>Портфолио</a>
         </div>
         <ul class="guarantees reveal" aria-label="Гарантии">{hero.guarantees.map((g) => <li>{g}</li>)}</ul>
         <div class="proof reveal">
           <span class="proof-label">{hero.proofLabel}</span>
           <a href="#work" class="proof-list" data-go="1">
-            {publishedCases.map((c) => <span class="proof-name" style={`--brand:${c.theme.bg.startsWith('#') ? c.theme.bg : '#21A038'}`}>{c.client.replace('ХК «Спартак» Москва', '«Спартак»')} </span>)}<span class="sr-only">— смотреть портфолио</span>
+            {publishedCases.map((c) => <span class="proof-name" style={`--brand:${c.theme.bg.startsWith('#') ? c.theme.bg : '#E8B04B'}`}>{c.client.replace('ХК «Спартак» Москва', '«Спартак»')} </span>)}<span class="sr-only">— смотреть портфолио</span>
           </a>
         </div>
         <p class="speed reveal" id="speed" aria-hidden="true"><span class="speed-dot" aria-hidden="true"></span><span id="speed-text"></span></p>
@@ -88,7 +88,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
         <div class="slide-inner">
           <span class="ghost-num" aria-hidden="true">02</span>
           <div class="s-head">
-            <div><div class="kicker reveal">02 / Портфолио</div><h2><Split text="Нам доверяют лидеры рынков" class="sh" /></h2></div>
+            <div><div class="kicker reveal">02 / Портфолио</div><h2><Split text={work.title} class="sh" /></h2></div>
           </div>
           <div class="panels reveal" id="panels">{publishedCases.map((c, i) => <CasePanel c={c} i={i} />)}</div>
         </div>
@@ -97,22 +97,88 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
 
     <!-- скважина: над портфолио, пока мы на первом слайде -->
     <button class="keyhole" type="button" data-go="1">
+      <canvas class="k-gl" aria-hidden="true"></canvas>
       <svg viewBox="0 0 100 100" fill="none" aria-hidden="true"><path d={keyholePath} stroke="#E8B04B" stroke-width="1.2" vector-effect="non-scaling-stroke"/></svg>
       <span class="keyhole-label"><span class="kl-d">Загляните внутрь ↓</span><span class="kl-m">Открыть кейсы</span></span>
     </button>
 
-    <!-- 3. КОНТАКТЫ (шторка) -->
+    <!-- 3. КОМАНДА (дверь справа): вес и обещание -->
+    <section class="slide s-team" id="team" aria-label="Команда">
+      <div class="slide-inner team">
+        <div class="team-main">
+          <span class="ghost-num" aria-hidden="true">03</span>
+          <div class="kicker reveal">03 / {team.kicker}</div>
+          <h2><Split text={team.title} class="sh" /></h2>
+          <div class="facts reveal">
+            <span class="facts-period">{team.period}</span>
+            {team.facts.map((f) => <p class="fact"><b>{f.n}</b><span>{f.label}</span></p>)}
+          </div>
+        </div>
+        <div class="team-side">
+          <p class="promise reveal">{team.promise}</p>
+          <p class="ai reveal"><b>{team.ai.tag}</b><span>{team.ai.text}</span></p>
+          <div class="team-exit reveal">
+            <p>{team.nda}</p>
+            <a href="#contact" class="btn btn-primary" data-go="contact" data-magnetic>{team.cta}</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. НАПРАВЛЕНИЯ (створки от центра): четыре двери, раскрываются на месте -->
+    <section class="slide s-dirs" id="services" aria-label="Направления">
+      <div class="slide-inner">
+        <span class="ghost-num" aria-hidden="true">04</span>
+        <div class="s-head">
+          <div><div class="kicker reveal">04 / {services.kicker}</div><h2><Split text={services.title} class="sh" /></h2></div>
+        </div>
+        <div class="doors reveal" id="doors">
+          {services.items.map((d, k) => <article class={`door${k === 0 ? ' open' : ''}`} style={`--pi:${k}`} tabindex="0" aria-label={d.name}>
+            <div class="door-top"><span>0{k + 1}</span><svg class="door-lock" viewBox="0 0 100 100" aria-hidden="true"><path d={keyholePath}/></svg></div>
+            <h3 class="door-name">{d.name}</h3>
+            <p class="door-pain">«{d.pain}»</p>
+            <svg class="door-key" viewBox="0 0 100 100" fill="none" aria-hidden="true"><path d={keyholePath} vector-effect="non-scaling-stroke"/></svg>
+            <div class="door-body">
+              <p class="door-what">{d.what}</p>
+              <ul class="door-get">{d.get.map((g) => <li>{g}</li>)}</ul>
+              <a href="#contact" class="btn btn-primary door-cta" data-go="contact" data-pain={d.pain}>{services.cta}</a>
+            </div>
+          </article>)}
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. КАК РАБОТАЕМ (раскрывается от кольца ключа): путь по ключу -->
+    <section class="slide s-proc" id="process" aria-label="Как работаем">
+      <div class="slide-inner">
+        <span class="ghost-num" aria-hidden="true">05</span>
+        <div class="s-head">
+          <div><div class="kicker reveal">05 / {process.kicker}</div><h2><Split text={process.title} class="sh" /></h2></div>
+        </div>
+        <div class="proc">
+          <div class="pkey" aria-hidden="true"><i class="pkey-bow"></i><i class="pkey-shaft"></i><svg class="pkey-bit" viewBox="0 0 64 30" fill="none"><path d="M10 0v22M30 0v14M50 0v26" stroke="#E8B04B" stroke-width="2.4"/></svg></div>
+          <ol class="steps">
+            {process.steps.map((st, k) => <li class="step" style={`--pi:${k}`}>
+              <span class="step-n">0{k + 1}</span>
+              <h3 class="step-name">{st.name}</h3>
+              <p class="step-text">{st.text}</p>
+            </li>)}
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. КОНТАКТЫ (шторка) -->
     <section class="slide s-contact" id="contact" aria-label="Контакты">
       <div class="slide-inner contact">
         <div class="contact-main">
-          <span class="ghost-num" aria-hidden="true">03</span>
-          <div class="kicker reveal">03 / Контакты</div>
+          <span class="ghost-num" aria-hidden="true">06</span>
+          <div class="kicker reveal">06 / Контакты</div>
           <h2><span class="ln"><Split text={contact.titleA} class="sh" /></span><span class="ln acc"><Split text={contact.titleB} class="sh" start={contact.titleA.length} /></span></h2>
           <p class="lead reveal">{contact.lead}</p>
           <div class="big-links reveal">
             <a href={brand.telegram} rel="noopener" class="big-link" data-magnetic>Telegram <i><svg class="arr" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 12 12 4M5.5 4H12v6.5" stroke="currentColor" stroke-width="1.8"/></svg></i></a>
             <a href={brand.phoneHref} class="mid-link mid-phone">{brand.phone}</a>
-            <a href={brand.telegram2} rel="noopener" class="mid-link mid-tg2">{brand.telegram2Label}</a>
             {reviews.map((r) => <a href={r.url} rel="noopener" class="mid-link">{r.label} ↗︎</a>)}
             {!brand.email.startsWith('[') && <a href={`mailto:${brand.email}`} class="mid-link mid-mail">{brand.email}</a>}
           </div>
@@ -284,8 +350,8 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
       if (i > 0) kTimer = window.setTimeout(() => deck.classList.add('k-open'), instant || was > 0 ? 0 : 1300);
       if (!on) { slides.forEach((s) => { s.classList.add('is-active'); s.removeAttribute('inert'); }); if (!instant) slides[i].scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' }); return; }
       if (instant) { root.classList.add('no-anim'); requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('no-anim'))); }
-      deck.dataset.i = String(i); root.dataset.slide = String(i);
-      slides.forEach((s, k) => { s.classList.toggle('is-active', k === i); s.toggleAttribute('inert', k !== i); });
+      deck.dataset.i = String(i); root.dataset.slide = String(i); root.classList.toggle('on-contact', slides[i].id === 'contact');
+      slides.forEach((s, k) => { s.classList.toggle('is-active', k === i); s.classList.toggle('passed', k <= i); s.toggleAttribute('inert', k !== i); });
       dots.forEach((d, k) => d.setAttribute('aria-current', String(k === i)));
       cur.textContent = String(i + 1).padStart(2, '0');
       history.replaceState(null, '', i ? `#${slides[i].id}` : location.pathname + location.search);
@@ -294,13 +360,13 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
     const setProgress = () => (progress.style.transform = `scaleX(${(i + 1) / slides.length})`);
     // Отклик на смену слайда: вход сквозь скважину — «поворот ключа», шторка — шелест, остальное — шаг.
     const feelFor = (from: number, to: number) => {
-      if (from === 0 && to === 1) feel('unlock'); else if (to === 2) feel('curtain'); else feel('step', to > from ? 1 : -1);
+      if (from === 0 && to === 1) feel('unlock'); else if (to === slides.length - 1) feel('curtain'); else feel('step', to > from ? 1 : -1);
     };
     const goFeel = (n: number) => {
       if (!on || playing) return false;
       const from = i; if (n === from || n < 0 || n >= slides.length) return false;
       lock = true; go(n); feelFor(from, n); setProgress(); root.classList.add('hint-used');
-      goal(n === 1 ? 'portfolio' : n === 2 ? 'contacts' : 'start');
+      goal(({ work: 'portfolio', team: 'team', services: 'services', process: 'process', contact: 'contacts' } as Record<string, string>)[slides[n].id] || 'start');
       setTimeout(() => (lock = false), 900); return true;   // быстрый повторный свайп не «теряется»
     };
     // Один жест = один шаг: возвращает 'moved' | 'edge' | 'busy'.
@@ -356,8 +422,10 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
     }, { passive: true });
     document.querySelectorAll<HTMLElement>('[data-go]').forEach((el) => el.addEventListener('click', (e) => {
       e.preventDefault(); if (playing) return;
-      if (!on) { go(Number(el.dataset.go)); return; }
-      goFeel(Number(el.dataset.go));
+      // data-go — номер слайда или его id ("contact"): id не ломается, когда слайдов становится больше
+      const v = el.dataset.go || '0', n = /^\d+$/.test(v) ? Number(v) : slides.findIndex((s) => s.id === v);
+      if (!on) { go(n); return; }
+      goFeel(n);
     }));
     // Браузер прокручивает слайд к полю с ошибкой или к фокусу — в режиме презентации это сдвигает экран.
     // Горизонтальный сдвиг запрещён всегда; вертикальный — только пока человек печатает (клавиатура телефона).
@@ -390,6 +458,20 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
       }, 2400);
     }
     if (!playing) { startRotator(); root.classList.add('hero-in'); }
+
+    /* ---------- направления: двери раскрываются; «Обсудить задачу» отмечает эту ситуацию в форме ---------- */
+    const doors = [...document.querySelectorAll<HTMLElement>('.door')];
+    const openDoor = (d: HTMLElement) => { if (d.classList.contains('open')) return; goal('door_open'); doors.forEach((x) => x.classList.toggle('open', x === d)); };
+    doors.forEach((d) => {
+      d.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') openDoor(d); });
+      d.addEventListener('focus', () => { if (d.matches(':focus-visible')) openDoor(d); });
+      d.addEventListener('click', () => { if (!d.classList.contains('open')) { openDoor(d); feel('open'); } });
+    });
+    document.querySelectorAll<HTMLElement>('[data-pain]').forEach((el) => el.addEventListener('click', () => {
+      const box = [...document.querySelectorAll<HTMLInputElement>('.pains input')].find((x) => x.value === el.dataset.pain);
+      if (box) box.checked = true;
+      goal('direction', false);
+    }));
 
     /* ---------- портфолио: раскрывающиеся панели ---------- */
     const panels = [...document.querySelectorAll<HTMLElement>('.panel')];
@@ -438,6 +520,13 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
         });
         el.addEventListener('mouseleave', () => (el.style.transform = ''));
       });
+    }
+
+    /* ---------- живая скважина: WebGL-свет за дверью (десктоп с мышью; грузится после страницы) ---------- */
+    if (matchMedia('(pointer: fine)').matches && innerWidth > 900 && !reduce) {
+      const boot = () => import('../scripts/keyhole-gl').then((m) => m.initKeyholeGL()).catch(() => {});
+      const idle = () => ('requestIdleCallback' in window ? requestIdleCallback(boot, { timeout: 2500 }) : setTimeout(boot, 600));
+      if (document.readyState === 'complete') idle(); else addEventListener('load', idle);
     }
 
     /* ---------- живое доказательство: скорость загрузки у самого посетителя ---------- */
@@ -491,7 +580,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
       const a = (e.target as Element).closest?.('a'); if (!a) return;
       if (a.href.startsWith('https://t.me/')) goal('telegram', false);
       else if (a.href.startsWith('tel:')) goal('phone', false);
-      else if (a.matches('.btn-primary[data-go="2"]')) goal('cta');
+      else if (a.matches('.s-start .btn-primary[data-go="contact"]')) goal('cta');
     }, true);
 
     /* ---------- заявка ---------- */

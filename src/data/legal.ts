@@ -8,7 +8,7 @@ export const legalVersion = '16 октября 2026 г.';
 const ph = (s: string) => s;                        // заглушка остаётся видимой, пока владелец не впишет данные
 const contacts = [
   !brand.phone.startsWith('[') && `телефон ${brand.phone}`,
-  brand.telegram.length > 13 && `Telegram ${brand.telegramLabel}${brand.telegram2 ? ` или ${brand.telegram2Label}` : ''}`,
+  brand.telegram.length > 13 && `Telegram ${brand.telegramLabel}`,
   !brand.email.startsWith('[') && `электронная почта ${brand.email}`,
 ].filter(Boolean).join(', ');
 

@@ -48,6 +48,19 @@ const style = `--pi:${i};--p-bg:${t.bg};--p-text:${t.text};--p-line:${t.line};--
           <circle class="a pulse" cx="306" cy="62" r="10" stroke-width="1.5"/>
         </g>
       )}
+      {c.art === 'energy' && (
+        <g stroke-width="2">
+          <path class="f" d="M40 205h320M40 45h320" stroke-width="1.5"/>
+          <path class="l" d="M40 150h70v-60h80v90h80V70h90"/>
+          <path class="a flow" d="M40 150h70v-60h80v90h80V70h90" stroke-dasharray="8 14"/>
+          <circle class="l" cx="110" cy="150" r="9"/><circle class="l" cx="190" cy="90" r="9"/><circle class="l" cx="270" cy="180" r="9"/>
+          <path class="l" d="M104 144l12 12M116 144l-12 12M184 84l12 12M196 84l-12 12M264 174l12 12M276 174l-12 12" stroke-width="1.5"/>
+          <rect class="room af" x="300" y="52" width="60" height="36" rx="4"/><rect class="a" x="300" y="52" width="60" height="36" rx="4" stroke-width="2.5"/>
+          <path class="f" d="M70 205v-28M150 205v-40M230 205v-22M310 205v-52" stroke-dasharray="3 4"/>
+          <circle class="afill" cx="40" cy="150" r="5"/>
+          <circle class="a pulse" cx="330" cy="70" r="10" stroke-width="1.5"/>
+        </g>
+      )}
       {c.art === 'hockey' && (
         <g stroke-width="2">
           <rect class="l" x="40" y="35" width="320" height="180" rx="70"/>
