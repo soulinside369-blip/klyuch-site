@@ -6,7 +6,9 @@ import Base from '../layouts/Base.astro';
 import CasePanel from '../components/CasePanel.astro';
 import Split from '../components/Split.astro';
 import { brand, hero, trailer, publishedCases, contact, reviews, team, work, services, process, calc } from '../data/site';
-const slides = [{ id: 'start', label: 'Старт' }, { id: 'work', label: 'Портфолио' }, { id: 'team', label: 'Команда' }, { id: 'services', label: 'Направления' }, { id: 'process', label: 'Процесс' }, { id: 'calc', label: 'Расчёт' }, { id: 'contact', label: 'Контакты' }];
+// Карусель офферов: заголовок режется на полосы-«штифты», каждая влетает со своим сдвигом (em) и встаёт в линию.
+const strips = [1.1, -0.7, 1.6, -1.2, 0.6, -0.95];
+const slides = [{ id: 'start', label: 'Старт' }, { id: 'work', label: 'Портфолио' }, { id: 'team', label: 'Команда' }, { id: 'process', label: 'Процесс' }, { id: 'calc', label: 'Расчёт' }, { id: 'contact', label: 'Контакты' }];
 const keyholePath = 'M43.5 56.8A18 18 0 1 1 56.5 56.8L63 86H37Z';
 const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/';
 ---
@@ -57,15 +59,23 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
     <section class="slide s-start" id="start" aria-label="Старт">
       <div class="hero-bg" aria-hidden="true"></div>
       <div class="slide-inner hero">
-        <div class="kicker reveal">{hero.kicker}<span class="sep"> · </span><b class="nw">от {hero.range.from} до {hero.range.to}</b></div>
-        <h1>
-          <Split text={hero.titleStart} class="h1-a h1-small" />
-          <span class="rot" aria-hidden="true">{hero.rotating.map((w, k) => <span class={`rw${k === 0 ? ' on' : ''}`}><Split text={w} /></span>)}</span>
-          <span class="sr-only">{hero.rotating.join(' ')}</span>
-        </h1>
-        <p class="lead reveal">{hero.lead}</p>
+        <h1 class="kicker reveal">{hero.kicker}<span class="sep"> · </span><b class="nw">от {hero.range.from} до {hero.range.to}</b></h1>
+        <!-- карусель офферов: боль зачёркивается → решение собирается из «штифтов» замка; шаг — services.interval -->
+        <div class="offers" id="offers" style={`--dur:${services.interval}ms`} aria-roledescription="карусель" aria-label={services.label}>
+          <div class="of-tabs" role="tablist" aria-label={services.label}>
+            {services.items.map((d, k) => <button type="button" role="tab" id={`of-t${k}`} aria-controls={`of-p${k}`} class={`of-tab${k === 0 ? ' on' : ''}`} aria-selected={k === 0 ? 'true' : 'false'}><span class="of-n">0{k + 1}</span><span class="of-name">{d.name}</span><i class="of-bar" aria-hidden="true"></i></button>)}
+            <button type="button" class="of-pause" id="of-pause" aria-pressed="false" aria-label="Остановить карусель"><i aria-hidden="true"></i></button>
+          </div>
+          <div class="of-stage">
+            {services.items.map((d, k) => <div class={`of${k === 0 ? ' on' : ''}`} id={`of-p${k}`} role="tabpanel" aria-labelledby={`of-t${k}`} aria-hidden={k === 0 ? 'false' : 'true'} data-pain={d.pain}>
+              <p class="of-pain"><span class="of-tag">{d.name} · </span><s>«{d.pain}»</s></p>
+              <p class="of-h">{strips.map((dx, j) => <span class="of-strip" style={`--j:${j};--dx:${dx}em`} aria-hidden={j > 0 ? 'true' : undefined}>{d.offer}</span>)}</p>
+              <ul class="of-get">{d.get.slice(0, 3).map((g, j) => <li style={`--j:${j}`}>{g}</li>)}</ul>
+            </div>)}
+          </div>
+        </div>
         <div class="actions reveal">
-          <a href="#contact" class="btn btn-primary" data-go="contact" data-magnetic>{hero.cta}</a>
+          <a href="#contact" class="btn btn-primary" id="hero-cta" data-go="contact" data-pain={services.items[0].pain} data-magnetic>{hero.cta}</a>
           <a href="#work" class="btn btn-ghost" data-go="1" data-magnetic>Портфолио</a>
         </div>
         <ul class="guarantees reveal" aria-label="Гарантии">{hero.guarantees.map((g) => <li>{g}</li>)}</ul>
@@ -77,9 +87,6 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
         </div>
         <p class="speed reveal" id="speed" aria-hidden="true"><span class="speed-dot" aria-hidden="true"></span><span id="speed-text"></span></p>
       </div>
-      <div class="marquee" aria-hidden="true"><div class="marquee-track">
-        {[0, 1].map(() => hero.pains.map((d) => <span>{d}</span>))}
-      </div></div>
     </section>
 
     <!-- 2. ПОРТФОЛИО (раскрывается сквозь скважину) -->
@@ -125,35 +132,12 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
       </div>
     </section>
 
-    <!-- 4. НАПРАВЛЕНИЯ (створки от центра): четыре двери, раскрываются на месте -->
-    <section class="slide s-dirs" id="services" aria-label="Направления">
+    <!-- 4. КАК РАБОТАЕМ (раскрывается от кольца ключа): путь по ключу -->
+    <section class="slide s-proc" id="process" aria-label="Как работаем">
       <div class="slide-inner">
         <span class="ghost-num" aria-hidden="true">04</span>
         <div class="s-head">
-          <div><div class="kicker reveal">04 / {services.kicker}</div><h2><Split text={services.title} class="sh" /></h2></div>
-        </div>
-        <div class="doors reveal" id="doors">
-          {services.items.map((d, k) => <article class={`door${k === 0 ? ' open' : ''}`} style={`--pi:${k}`} tabindex="0" aria-label={d.name}>
-            <div class="door-top"><span>0{k + 1}</span><svg class="door-lock" viewBox="0 0 100 100" aria-hidden="true"><path d={keyholePath}/></svg></div>
-            <h3 class="door-name">{d.name}</h3>
-            <p class="door-pain">«{d.pain}»</p>
-            <svg class="door-key" viewBox="0 0 100 100" fill="none" aria-hidden="true"><path d={keyholePath} vector-effect="non-scaling-stroke"/></svg>
-            <div class="door-body">
-              <p class="door-what">{d.what}</p>
-              <ul class="door-get">{d.get.map((g) => <li>{g}</li>)}</ul>
-              <a href="#contact" class="btn btn-primary door-cta" data-go="contact" data-pain={d.pain}>{services.cta}</a>
-            </div>
-          </article>)}
-        </div>
-      </div>
-    </section>
-
-    <!-- 5. КАК РАБОТАЕМ (раскрывается от кольца ключа): путь по ключу -->
-    <section class="slide s-proc" id="process" aria-label="Как работаем">
-      <div class="slide-inner">
-        <span class="ghost-num" aria-hidden="true">05</span>
-        <div class="s-head">
-          <div><div class="kicker reveal">05 / {process.kicker}</div><h2><Split text={process.title} class="sh" /></h2></div>
+          <div><div class="kicker reveal">04 / {process.kicker}</div><h2><Split text={process.title} class="sh" /></h2></div>
         </div>
         <div class="proc">
           <div class="pkey" aria-hidden="true"><i class="pkey-bow"></i><i class="pkey-shaft"></i><svg class="pkey-bit" viewBox="0 0 64 30" fill="none"><path d="M10 0v22M30 0v14M50 0v26" stroke="#E8B04B" stroke-width="2.4"/></svg></div>
@@ -171,9 +155,9 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
     <!-- 6. РАСЧЁТ (шторка слева): три ответа набирают замок, запрос уходит в форму -->
     <section class="slide s-calc" id="calc" aria-label="Расчёт">
       <div class="slide-inner">
-        <span class="ghost-num" aria-hidden="true">06</span>
+        <span class="ghost-num" aria-hidden="true">05</span>
         <div class="s-head">
-          <div><div class="kicker reveal">06 / {calc.kicker}</div><h2><Split text={calc.title} class="sh" /></h2></div>
+          <div><div class="kicker reveal">05 / {calc.kicker}</div><h2><Split text={calc.title} class="sh" /></h2></div>
         </div>
         <div class="calc">
           <div class="calc-q reveal">
@@ -203,8 +187,8 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
     <section class="slide s-contact" id="contact" aria-label="Контакты">
       <div class="slide-inner contact">
         <div class="contact-main">
-          <span class="ghost-num" aria-hidden="true">07</span>
-          <div class="kicker reveal">07 / Контакты</div>
+          <span class="ghost-num" aria-hidden="true">06</span>
+          <div class="kicker reveal">06 / Контакты</div>
           <h2><span class="ln"><Split text={contact.titleA} class="sh" /></span><span class="ln acc"><Split text={contact.titleB} class="sh" start={contact.titleA.length} /></span></h2>
           <p class="lead reveal">{contact.lead}</p>
           <div class="big-links reveal">
@@ -275,7 +259,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
       try { sessionStorage.setItem('ks_trailer', '1'); localStorage.setItem('ks_trailer_at', String(Date.now())); } catch {}
       root.classList.add('trailer-out');
       setTimeout(() => { root.classList.remove('trailer-on', 'trailer-out'); root.classList.add('trailer-off'); trailerEl.remove(); }, 1300);
-      startRotator(); setTimeout(() => root.classList.add('hero-in'), 250);
+      setTimeout(() => root.classList.add('hero-in'), 250);
     };
     if (playing) {
       // Старт после загрузки шрифта (не дольше 700 мс), чтобы буквы не «прыгали» с системного шрифта.
@@ -399,7 +383,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
       if (!on || playing) return false;
       const from = i; if (n === from || n < 0 || n >= slides.length) return false;
       lock = true; go(n); feelFor(from, n); setProgress(); root.classList.add('hint-used');
-      goal(({ work: 'portfolio', team: 'team', services: 'services', process: 'process', calc: 'calc', contact: 'contacts' } as Record<string, string>)[slides[n].id] || 'start');
+      goal(({ work: 'portfolio', team: 'team', process: 'process', calc: 'calc', contact: 'contacts' } as Record<string, string>)[slides[n].id] || 'start');
       setTimeout(() => (lock = false), 900); return true;   // быстрый повторный свайп не «теряется»
     };
     // Один жест = один шаг: возвращает 'moved' | 'edge' | 'busy'.
@@ -477,33 +461,40 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
     if (playing && document.fonts) { document.fonts.ready.then(apply); } else { apply(); document.fonts?.ready.then(apply); }
     setProgress();
 
-    /* ---------- меняющееся слово ---------- */
-    let rotStarted = false;
-    function startRotator() {
-      if (rotStarted || reduce) return; rotStarted = true;
-      const words = [...document.querySelectorAll<HTMLElement>('.rot .rw')];
+    /* ---------- карусель офферов: часы — анимация полоски активной вкладки (пауза = пауза анимации) ---------- */
+    if (!playing) root.classList.add('hero-in');
+    {
+      const box = document.getElementById('offers');
+      const tabs = [...document.querySelectorAll<HTMLButtonElement>('.of-tab')];
+      const panes = [...document.querySelectorAll<HTMLElement>('.of')];
+      const cta = document.getElementById('hero-cta');
+      const pauseBtn = document.getElementById('of-pause');
       let k = 0;
-      setInterval(() => {
-        if (document.hidden) return;
-        words[k].classList.remove('on'); words[k].classList.add('off');
-        const prev = words[k]; setTimeout(() => prev.classList.remove('off'), 900);
-        k = (k + 1) % words.length; words[k].classList.add('on');
-      }, 2400);
+      const show = (n: number, user = false) => {
+        if (n === k) return;
+        const prev = panes[k];
+        prev.classList.remove('on'); prev.classList.add('off'); prev.setAttribute('aria-hidden', 'true');
+        setTimeout(() => prev.classList.remove('off'), 650);
+        tabs[k].classList.remove('on'); tabs[k].setAttribute('aria-selected', 'false');
+        k = n;
+        panes[k].classList.remove('off'); panes[k].classList.add('on'); panes[k].setAttribute('aria-hidden', 'false');
+        tabs[k].classList.add('on'); tabs[k].setAttribute('aria-selected', 'true');
+        if (cta) cta.dataset.pain = panes[k].dataset.pain;
+        root.classList.remove('k-tick'); void root.offsetWidth; root.classList.add('k-tick');   // свет в скважине вспыхивает — «ключ повернулся»
+        if (user) { feel('tick'); goal('offer', false); }
+      };
+      tabs.forEach((t, n) => t.addEventListener('click', () => show(n, true)));
+      box?.addEventListener('animationend', (e) => { if ((e.target as HTMLElement).classList.contains('of-bar')) show((k + 1) % panes.length); });
+      box?.addEventListener('focusin', (e) => { if ((e.target as HTMLElement).matches(':focus-visible')) box.classList.add('hold'); });
+      box?.addEventListener('focusout', () => box.classList.remove('hold'));
+      pauseBtn?.addEventListener('click', () => {
+        const p = box!.classList.toggle('paused');
+        pauseBtn.setAttribute('aria-pressed', String(p)); pauseBtn.setAttribute('aria-label', p ? 'Запустить карусель' : 'Остановить карусель');
+      });
     }
-    if (!playing) { startRotator(); root.classList.add('hero-in'); }
-
-    /* ---------- направления: двери раскрываются; «Обсудить задачу» отмечает эту ситуацию в форме ---------- */
-    const doors = [...document.querySelectorAll<HTMLElement>('.door')];
-    const openDoor = (d: HTMLElement) => { if (d.classList.contains('open')) return; goal('door_open'); doors.forEach((x) => x.classList.toggle('open', x === d)); };
-    doors.forEach((d) => {
-      d.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') openDoor(d); });
-      d.addEventListener('focus', () => { if (d.matches(':focus-visible')) openDoor(d); });
-      d.addEventListener('click', () => { if (!d.classList.contains('open')) { openDoor(d); feel('open'); } });
-    });
     document.querySelectorAll<HTMLElement>('[data-pain]').forEach((el) => el.addEventListener('click', () => {
       const box = [...document.querySelectorAll<HTMLInputElement>('.pains input')].find((x) => x.value === el.dataset.pain);
       if (box) box.checked = true;
-      goal('direction', false);
     }));
 
     /* ---------- расчёт: три ответа поворачивают кольца замка; запрос сразу кладётся в форму ---------- */
