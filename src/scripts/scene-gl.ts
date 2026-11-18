@@ -88,7 +88,7 @@ void main(){
   // в покое фигура смотрит на зрителя (лёгкое покачивание), между экранами — разворот на пол-оборота; пыль поворачивается медленнее (глубина)
   float ay=(sin(uT*.25)*.35+sin(f*3.14159)*1.6)*live*(1.-dust*.7)+uM.x*(.35-dust*.2), ax=.12+uM.y*(.22-dust*.12)+sin(f*3.14159)*.35*(1.-dust);
   p.xz=rot(ay)*p.xz; p.yz=rot(ax)*p.yz;
-  p*=uPl.z*(1.+uPulse*.07*(.4+aR.w));                               // «вдох» сцены на событие (оффер, замок, заявка)
+  p*=uPl.z*(1.+uPulse*.07*(.4+aR.w))*(1.+s*.55);                  // пролёт камеры: в середине перехода летим сквозь облако                               // «вдох» сцены на событие (оффер, замок, заявка)
   float d=3.2-p.z;
   vec2 q=p.xy*2.2/d; q.x/=uAsp; q+=uPl.xy*(1.-dust*.6);
   // частицы расступаются вокруг курсора/пальца и светлеют рядом с ним
@@ -146,7 +146,7 @@ export function initScene(canvas: HTMLCanvasElement, deck: HTMLElement) {
   const uP = U('uP'), uT = U('uT'), uAsp = U('uAsp'), uSz = U('uSz'), uM = U('uM'), uPl = U('uPl'), uCol = U('uCol'), uDark = U('uDark'), uRm = U('uRm');
   gl.uniform1f(uRm, reduce ? 1 : 0);
   gl.disable(gl.DEPTH_TEST); gl.enable(gl.BLEND);
-  const dpr = Math.min(devicePixelRatio || 1, phone ? 1.5 : 1.75);
+  let dpr = Math.min(devicePixelRatio || 1, phone ? 1.5 : 1.75), count = N, probe = 0, slow = 0;
   const size = () => { canvas.width = Math.round(innerWidth * dpr); canvas.height = Math.round(innerHeight * dpr); gl.viewport(0, 0, canvas.width, canvas.height); gl.uniform1f(uAsp, innerWidth / innerHeight); gl.uniform1f(uSz, (phone ? 2.2 : 2.6) * dpr); };
   size(); addEventListener('resize', size);
   const last = 5;
@@ -166,7 +166,9 @@ export function initScene(canvas: HTMLCanvasElement, deck: HTMLElement) {
     const T = phone ? PLACE_M : PLACE_D, a = Math.max(0, Math.min(last, Math.floor(x))), b = Math.min(last, a + 1), f = x - a;
     const e = f * f * (3 - 2 * f); return T[a].map((va, k) => va + (T[b][k] - va) * e);
   };
-  const BG0 = [0.043, 0.047, 0.055], BG1 = [0.91, 0.69, 0.294], C0 = [0.91, 0.69, 0.294], C1 = [0.1, 0.07, 0.02];
+  const BG0 = [0.043, 0.047, 0.055], BG1 = [0.91, 0.69, 0.294], C1 = [0.1, 0.07, 0.02];
+  // свой оттенок латуни на каждом экране: тёплый ключ, светлое золото кейсов, медь команды, чистая латунь процесса, янтарь замка
+  const TINT = [[0.91, 0.69, 0.29], [0.96, 0.82, 0.52], [0.93, 0.58, 0.3], [0.91, 0.72, 0.36], [1, 0.66, 0.22], [0.91, 0.69, 0.29]];
   const frame = (now: number) => {
     raf = 0;
     // пружина к целевому экрану (~1,4 с), без перелёта
@@ -178,13 +180,17 @@ export function initScene(canvas: HTMLCanvasElement, deck: HTMLElement) {
     drag += (dragT - drag) * (1 - Math.exp(-dt * 12));
     const pe = Math.max(0, Math.min(last, p + drag));
     const dark = Math.max(0, Math.min(1, pe - (last - 1)));            // последний экран: фон латунный, частицы тёмные
+    const ta = Math.floor(pe), tb = Math.min(last, ta + 1), tf = pe - ta;
+    const C0 = TINT[ta].map((c, i) => c + (TINT[tb][i] - c) * tf);
     const bg = BG0.map((c, i) => c + (BG1[i] - c) * dark), col = C0.map((c, i) => c + (C1[i] - c) * dark);
     gl.clearColor(bg[0], bg[1], bg[2], 1); gl.clear(gl.COLOR_BUFFER_BIT);
     if (dark > 0.5) gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); else gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
     gl.uniform1f(uP, pe); gl.uniform1f(uT, now / 1000); gl.uniform2f(uM, mx, my);
     gl.uniform1f(uPulse, pulse); gl.uniform1f(uRep, rep); gl.uniform2f(uMp, px, py);
     gl.uniform4fv(uPl, place(pe)); gl.uniform3fv(uCol, col); gl.uniform1f(uDark, dark);
-    gl.drawArrays(gl.POINTS, 0, N);
+    // защита скорости: если кадр дольше ~22 мс (меньше 45 кадров/с), рисуем вдвое меньше частиц и снижаем плотность пикселей
+    if (probe < 90 && dt > 0) { probe++; slow += dt > 0.022 ? 1 : 0; if (probe === 90 && slow > 30) { count = Math.floor(N / 2); dpr = 1; size(); } }
+    gl.drawArrays(gl.POINTS, 0, count);
     if (!document.hidden && !reduce) raf = requestAnimationFrame(frame);
   };
   const wake = () => { if (!raf) { t0 = performance.now(); raf = requestAnimationFrame(frame); } };
