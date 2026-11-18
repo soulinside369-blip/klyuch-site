@@ -67,37 +67,51 @@ function shapes(N: number): Float32Array[] {
 
 // Позиция и масштаб фигуры на каждом экране: [x, y, масштаб, яркость] — компьютер / телефон. Фигура не спорит с текстом.
 const PLACE_D: number[][] = [[0.12, -0.02, 1.15, 0.34], [0, 0, 1.3, 0.3], [0.6, -0.05, 0.8, 0.42], [0, 0.04, 1.08, 0.5], [0.53, 0.05, 0.52, 0.8], [0.02, 0.02, 1.1, 0.55]];
-const PLACE_M: number[][] = [[0, 0.42, 0.72, 0.35], [0, 0, 1.1, 0.28], [0, 0.4, 0.62, 0.4], [0, 0.1, 0.9, 0.32], [0, 0.5, 0.5, 0.5], [0, 0.3, 0.8, 0.4]];
+const PLACE_M: number[][] = [[0, 0.42, 0.72, 0.35], [0, 0, 1.1, 0.28], [0, 0.4, 0.62, 0.4], [-0.86, -0.12, 0.6, 0.5], [0, 0.5, 0.5, 0.5], [0, 0.3, 0.8, 0.4]];
 
 const VS = `
 attribute vec3 a0,a1,a2,a3,a4,a5; attribute vec4 aR;
-uniform float uP,uT,uAsp,uSz,uRm,uPulse,uRep; uniform vec2 uM,uMp; uniform vec4 uPl;
-varying float vA,vDepth;
+uniform float uP,uT,uAsp,uSz,uRm,uPulse,uRep,uVert; uniform vec2 uM,uMp; uniform vec4 uPl;
+varying float vA,vDepth,vSpark;
 float w(float k){return clamp(1.-abs(uP-k),0.,1.);}
+mat2 rot(float a){float c=cos(a),s=sin(a);return mat2(c,-s,s,c);}
 void main(){
-  vec3 p=a0*w(0.)+a1*w(1.)+a2*w(2.)+a3*w(3.)+a4*w(4.)+a5*w(5.);
-  float f=fract(uP), s=sin(f*3.14159)*(1.-uRm);                     // разлёт в середине перехода
+  float live=1.-uRm, dust=step(aR.w,.001);                          // dust: дальний слой пыли (не перетекает, плывёт сзади)
+  // жизнь внутри фигур: кольца замка крутятся с разной скоростью, ореол скважины кружит
+  vec3 b4=a4; b4.xy=rot(uT*.32*(1.35-length(a4))*live)*b4.xy;
+  vec3 b5=a5; float h5=step(.72,length(a5.xy-vec2(0.,.05))); b5.xy=rot(uT*.07*h5*live)*b5.xy;
+  vec3 b3=mix(a3,vec3(-a3.y,-a3.x,a3.z),uVert);                    // телефон: путь процесса вертикально, вдоль стержня ключа
+  vec3 p=a0*w(0.)+a1*w(1.)+a2*w(2.)+b3*w(3.)+b4*w(4.)+b5*w(5.);
+  float f=fract(uP), s=sin(f*3.14159)*live*(1.-dust);               // разлёт в середине перехода
   vec3 dir=normalize(aR.xyz*2.-1.+1e-4);
-  p+=dir*s*(.35+aR.w*.6)+vec3(sin(uT*.6+aR.x*20.),cos(uT*.5+aR.y*20.),sin(uT*.4+aR.z*20.))*(.012+s*.05);
-  // в покое фигура смотрит на зрителя (лёгкое покачивание), между экранами — разворот на пол-оборота
-  float ay=sin(uT*.25)*.35*(1.-uRm)+sin(f*3.14159)*1.6*(1.-uRm)+uM.x*.35, ax=.12+uM.y*.22+sin(f*3.14159)*.35;
-  float cy=cos(ay),sy=sin(ay); p.xz=mat2(cy,-sy,sy,cy)*p.xz;
-  float cx=cos(ax),sx=sin(ax); p.yz=mat2(cx,-sx,sx,cx)*p.yz;
-  p*=uPl.z*(1.+uPulse*.07*(.4+aR.w));                         // «вдох» сцены на событие (оффер, замок, заявка)
+  p+=dir*s*(.35+aR.w*.6)+vec3(sin(uT*.6+aR.x*20.),cos(uT*.5+aR.y*20.),sin(uT*.4+aR.z*20.))*(.012+s*.05+dust*.05);
+  // в покое фигура смотрит на зрителя (лёгкое покачивание), между экранами — разворот на пол-оборота; пыль поворачивается медленнее (глубина)
+  float ay=(sin(uT*.25)*.35+sin(f*3.14159)*1.6)*live*(1.-dust*.7)+uM.x*(.35-dust*.2), ax=.12+uM.y*(.22-dust*.12)+sin(f*3.14159)*.35*(1.-dust);
+  p.xz=rot(ay)*p.xz; p.yz=rot(ax)*p.yz;
+  p*=uPl.z*(1.+uPulse*.07*(.4+aR.w));                               // «вдох» сцены на событие (оффер, замок, заявка)
   float d=3.2-p.z;
-  vec2 q=p.xy*2.2/d; q.x/=uAsp; q+=uPl.xy;
+  vec2 q=p.xy*2.2/d; q.x/=uAsp; q+=uPl.xy*(1.-dust*.6);
   // частицы расступаются вокруг курсора/пальца и светлеют рядом с ним
-  vec2 dd=q-uMp; dd.x*=uAsp; float near=exp(-dot(dd,dd)*12.)*uRep;
+  vec2 dd=q-uMp; dd.x*=uAsp; float near=exp(-dot(dd,dd)*12.)*uRep*(1.-dust);
   vec2 push=normalize(dd+1e-5)*.14*near; push.x/=uAsp; q+=push;
   gl_Position=vec4(q,0.,1.);
-  gl_PointSize=uSz*(.55+aR.w*.9)*(3.2/d);
-  vDepth=clamp((p.z+1.2)/2.4,0.,1.); vA=uPl.w*(1.+near*.9+uPulse*.7);
+  // свет внутри фигур: волна по панелям, импульсы по сфере, искра бежит по пути процесса
+  float spark=fract(uT*.22)*2.6-1.3;
+  float glow=w(1.)*(.5+.5*sin(a1.x*5.-uT*2.2))*.55
+            +w(2.)*pow(.5+.5*sin(a2.y*9.-uT*1.8),3.)*.8
+            +w(3.)*exp(-pow(a3.x-spark,2.)*40.)*2.2;
+  float big=step(.985,aR.w);                                        // редкие крупные искры — блики на металле
+  gl_PointSize=uSz*(.55+aR.w*.9+big*1.6)*(3.2/d)*(1.-dust*.45);
+  vDepth=clamp((p.z+1.2)/2.4,0.,1.)*(1.-dust*.6);
+  vSpark=clamp(big+glow*.5,0.,1.);
+  vA=uPl.w*(1.+near*.9+uPulse*.7+glow)*(1.-dust*.55)*live+uPl.w*uRm*(1.-dust*.55);
 }`;
 const FS = `
-precision mediump float; uniform vec3 uCol; uniform float uDark; varying float vA,vDepth;
+precision mediump float; uniform vec3 uCol; uniform float uDark; varying float vA,vDepth,vSpark;
 void main(){ vec2 c=gl_PointCoord-.5; float r=length(c); if(r>.5) discard;
   float a=smoothstep(.5,.0,r)*vA*(.35+vDepth*.65);
-  gl_FragColor=vec4(uCol*(mix(.75,1.25,vDepth)),a*mix(.85,.9,uDark)); }`;
+  vec3 hot=mix(vec3(1.,.9,.68),uCol,uDark);                          // искры светлее латуни (на жёлтом фоне — нет)
+  gl_FragColor=vec4(mix(uCol*mix(.75,1.25,vDepth),hot,vSpark*(1.-uDark)),a*mix(.85,.9,uDark)); }`;
 
 export function initScene(canvas: HTMLCanvasElement, deck: HTMLElement) {
   const gl = canvas.getContext('webgl', { antialias: false, alpha: false, powerPreference: 'low-power', premultipliedAlpha: false });
@@ -116,11 +130,19 @@ export function initScene(canvas: HTMLCanvasElement, deck: HTMLElement) {
     const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
     const l = gl.getAttribLocation(pr, name); if (l < 0) return; gl.enableVertexAttribArray(l); gl.vertexAttribPointer(l, size, gl.FLOAT, false, 0, 0);
   };
-  shapes(N).forEach((s, k) => buf('a' + k, s, 3));
   const rnd = new Float32Array(N * 4); for (let i = 0; i < rnd.length; i++) rnd[i] = Math.random();
+  const sets = shapes(N);
+  for (let i = 0; i < N; i++) {                                    // 11% — дальняя пыль: одна точка во всех фигурах, aR.w = 0
+    if (rnd[i * 4 + 3] > 0.11) { if (rnd[i * 4 + 3] < 0.12) rnd[i * 4 + 3] = 0.12; continue; }
+    rnd[i * 4 + 3] = 0;
+    const x = (Math.random() * 2 - 1) * 2.6, y = (Math.random() * 2 - 1) * 1.6, z = -0.6 - Math.random() * 1.6;
+    sets.forEach((sh) => sh.set([x, y, z], i * 3));
+  }
+  sets.forEach((sh, k) => buf('a' + k, sh, 3));
   buf('aR', rnd, 4);
   const U = (n: string) => gl.getUniformLocation(pr, n);
   const uPulse = U('uPulse'), uRep = U('uRep'), uMp = U('uMp');
+  gl.uniform1f(U('uVert'), phone ? 1 : 0);
   const uP = U('uP'), uT = U('uT'), uAsp = U('uAsp'), uSz = U('uSz'), uM = U('uM'), uPl = U('uPl'), uCol = U('uCol'), uDark = U('uDark'), uRm = U('uRm');
   gl.uniform1f(uRm, reduce ? 1 : 0);
   gl.disable(gl.DEPTH_TEST); gl.enable(gl.BLEND);
