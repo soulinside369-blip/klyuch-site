@@ -422,10 +422,27 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
       if (!on) { slides.forEach((s) => { s.classList.add('is-active'); s.removeAttribute('inert'); }); if (!instant) slides[i].scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' }); return; }
       if (instant) { root.classList.add('no-anim'); requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('no-anim'))); }
       deck.dataset.i = String(i); root.dataset.slide = String(i); root.classList.toggle('on-contact', slides[i].id === 'contact');
-      slides.forEach((s, k) => { s.classList.toggle('is-active', k === i); s.classList.toggle('passed', k <= i); s.toggleAttribute('inert', k !== i); });
+      slides.forEach((s, k) => { s.classList.toggle('is-active', k === i); s.classList.toggle('passed', k <= i); s.classList.toggle('far', k < i - 1 || (k > i + 1 && k > was + 1)); s.toggleAttribute('inert', k !== i); });
       dots.forEach((d, k) => d.setAttribute('aria-current', String(k === i)));
       cur.textContent = String(i + 1).padStart(2, '0');
+      if (slides[i].id === 'team') countUp();
       history.replaceState(null, '', i ? `#${slides[i].id}` : location.pathname + location.search);
+    }
+    // «Команда»: цифры владельца набегают от нуля при первом входе (сами цифры — дословно из site.ts, меняется только подача).
+    let counted = false;
+    function countUp() {
+      if (counted || reduce) return; counted = true;
+      document.querySelectorAll<HTMLElement>('.s-team .fact b').forEach((b, j) => {
+        const m = (b.textContent || '').match(/^(\d+)(.*)$/); if (!m) return;
+        const to = +m[1], tail = m[2], t0 = performance.now() + 450 + j * 180, dur = 1300;
+        b.textContent = '0' + tail;
+        const tick = (now: number) => {
+          const p = Math.min(1, Math.max(0, (now - t0) / dur)), e = 1 - Math.pow(1 - p, 4);
+          b.textContent = Math.round(to * e) + tail;
+          if (p < 1) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      });
     }
     const progress = document.getElementById('progress-bar')!;
     const setProgress = () => (progress.style.transform = `scaleX(${(i + 1) / slides.length})`);

@@ -221,19 +221,20 @@ html.deck-on .s-start .slide-inner{transition:transform 1.25s var(--zoom),opacit
 html.deck-on .deck:not([data-i="0"]) .s-start .slide-inner{transform:scale(.9);opacity:0}
 
 
-/* 4 → 5: шторка снизу */
-html.deck-on .s-contact{clip-path:inset(100% 0 0 0);transition:clip-path 1.05s var(--zoom)}
-html.deck-on .s-contact.passed{clip-path:inset(0 0 0 0)}
-/* 2 → 3: команда выезжает справа, как дверь */
-html.deck-on .s-team{clip-path:inset(0 0 0 100%);transition:clip-path 1.05s var(--zoom)}
-html.deck-on .s-team.passed{clip-path:inset(0 0 0 0)}
-/* 3 → 4: направления раскрываются от центра, как створки */
-/* 4 → 5: процесс раскрывается кругом от кольца ключа */
-html.deck-on .s-proc{clip-path:circle(0 at 9% 46%);transition:clip-path 1.15s var(--zoom)}
-html.deck-on .s-proc.passed{clip-path:circle(150% at 9% 46%)}
-/* 5 → 6: расчёт выезжает слева */
-html.deck-on .s-calc{clip-path:inset(0 100% 0 0);transition:clip-path 1.05s var(--zoom)}
-html.deck-on .s-calc.passed{clip-path:inset(0 0 0 0)}
+/* ---------- 3D-камера между экранами (18.11, владелец: «переход визуализировать 3D-анимацией») ----------
+   Колода в перспективе. Пройденный экран уходит в глубину и наклоняется, следующий входит своим ходом:
+   Портфолио → Команда — дверь на петлях · Команда → Процесс — встаёт с пола · Процесс → Расчёт — грань куба ·
+   Расчёт → Контакты — переворот карты. Только transform/opacity; два шага назад экран скрыт (.far), чтобы слои не просвечивали. */
+:root{--cam:cubic-bezier(.65,0,.2,1)}
+html.deck-on .deck{perspective:1600px;perspective-origin:50% 45%;background:#050506}
+html.deck-on .slide:not(.s-start){backface-visibility:hidden;-webkit-backface-visibility:hidden;transition:transform 1.15s var(--cam),opacity 1.15s var(--cam)}
+html.deck-on .s-team{transform-origin:100% 50%;transform:rotateY(-96deg)}
+html.deck-on .s-proc{transform-origin:50% 100%;transform:rotateX(-92deg)}
+html.deck-on .s-calc{transform-origin:0 50%;transform:translate3d(55%,0,0) rotateY(-75deg);opacity:0}
+html.deck-on .s-contact{transform-origin:50% 50%;transform:rotateX(180deg)}
+html.deck-on .slide.passed.is-active{transform:none;opacity:1}
+html.deck-on .slide.passed:not(.is-active):not(.s-start){transform:translate3d(0,-4%,-520px) rotateX(9deg);opacity:.28}
+html.deck-on .slide.far:not(.s-start){visibility:hidden;transition:none}
 
 /* появление содержимого */
 html.deck-on .slide .reveal{opacity:0;transform:translateY(32px);transition:opacity .8s ease,transform .9s var(--ease)}
@@ -609,7 +610,7 @@ html.deck-on .s-work.is-active .panel{animation:panel-in 1s var(--ease) both;ani
 .facts{display:flex;flex-wrap:wrap;align-items:flex-end;gap:6px clamp(24px,3.4vw,56px);margin-top:clamp(18px,4vh,44px)}
 .facts-period{flex:0 0 100%;font:400 12px/1 var(--mono);letter-spacing:2.5px;text-transform:uppercase;color:var(--faint)}
 .fact{margin:0}
-.fact b{display:block;font:700 clamp(46px,5.5vw,96px)/.95 var(--display);letter-spacing:-.03em;color:var(--accent);text-shadow:0 0 44px rgba(232,176,75,.22)}
+.fact b{display:block;font-variant-numeric:tabular-nums;font:700 clamp(46px,5.5vw,96px)/.95 var(--display);font-variant-numeric:tabular-nums;letter-spacing:-.03em;color:var(--accent);text-shadow:0 0 44px rgba(232,176,75,.22)}
 .fact span{display:block;margin-top:8px;font:400 12px/1.3 var(--mono);letter-spacing:1.5px;text-transform:uppercase;color:var(--dim)}
 .team-side{display:flex;flex-direction:column;gap:clamp(16px,3.2vh,30px)}
 .promise{margin:0;font:500 clamp(20px,2.3vw,34px)/1.2 var(--display);letter-spacing:-.3px;color:var(--text)}
