@@ -197,47 +197,25 @@ html.deck-on .s-calc{z-index:7}
 html.deck-on .s-contact{z-index:8}
 html.deck-on .slide{padding-right:calc(var(--pad) + 24px)}
 
-/* 1 → 2: портфолио раскрывается сквозь скважину */
-html.deck-on .s-work{padding:0;
-  -webkit-mask:var(--keyhole) no-repeat;mask:var(--keyhole) no-repeat;
-  -webkit-mask-size:0 0;mask-size:0 0;
-  -webkit-mask-position:calc(var(--kx) - var(--ks)/2) calc(var(--ky) - var(--ks)*.4);mask-position:calc(var(--kx) - var(--ks)/2) calc(var(--ky) - var(--ks)*.4);
-  transition:-webkit-mask-size 1.25s var(--zoom),-webkit-mask-position 1.25s var(--zoom),mask-size 1.25s var(--zoom),mask-position 1.25s var(--zoom),filter 1.25s var(--zoom);
-  filter:brightness(.62) saturate(.9)}
-html.deck-on .deck:not([data-i="0"]) .s-work{
-  -webkit-mask-size:var(--kz) var(--kz);mask-size:var(--kz) var(--kz);
-  -webkit-mask-position:calc(var(--kx) - var(--kz)*.5) calc(var(--ky) - var(--kz)*.4);mask-position:calc(var(--kx) - var(--kz)*.5) calc(var(--ky) - var(--kz)*.4);
-  filter:none}
+/* ---------- смена экранов (19.11): мягкий наплыв поверх единой 3D-сцены ----------
+   Владельцу не понравились «падающие экраны». Теперь экран не двигается сам — меняется сцена за ним (scene-gl.ts),
+   а контент проявляется наплывом. Старый экран гаснет быстро, новый проявляется с задержкой — без каши. */
+html.deck-on .slide:not(.s-start){opacity:0;visibility:hidden;transition:opacity .45s ease,visibility 0s .45s}
+html.deck-on .slide.is-active:not(.s-start){opacity:1;visibility:visible;transition:opacity .8s ease .3s,visibility 0s}
 .zoom{width:100%;display:flex;align-items:center}
-html.deck-on .zoom{position:absolute;inset:0;padding:clamp(76px,11vh,104px) calc(var(--pad) + 24px) clamp(56px,9vh,84px) var(--pad);transform-origin:var(--kx) var(--ky);transform:scale(1.35);transition:transform 1.25s var(--zoom)}
-html.deck-on .deck:not([data-i="0"]) .zoom{transform:none}
-/* свет за дверью: пока смотрим в скважину — тёплое сияние, при входе растворяется */
-html.deck-on .s-work::after{content:'';position:absolute;inset:0;z-index:5;pointer-events:none;background:radial-gradient(circle at var(--kx) calc(var(--ky) + var(--ks)*.1),#FFF1CF 0%,#F3C976 calc(var(--ks)*.12),#C98A22 calc(var(--ks)*.3),#3a2606 calc(var(--ks)*.62),#0B0C0E calc(var(--ks)*.95));transition:opacity .9s ease .15s}
-html.deck-on .deck:not([data-i="0"]) .s-work::after{opacity:0}
-/* после входа маска снимается совсем: ничего не подрезает и не грузит видеочип телефона */
-html.deck-on .deck.k-open .s-work{-webkit-mask:none;mask:none;transition:none}
+html.deck-on .zoom{position:absolute;inset:0;padding:clamp(76px,11vh,104px) calc(var(--pad) + 24px) clamp(56px,9vh,84px) var(--pad)}
 /* первый слайд уходит вглубь */
-html.deck-on .s-start .slide-inner{transition:transform 1.25s var(--zoom),opacity 1s ease}
+html.deck-on .s-start .slide-inner{transition:transform .9s var(--zoom),opacity .4s ease}
+html.deck-on .deck[data-i="0"] .s-start .slide-inner{transition:transform .9s var(--zoom),opacity .8s ease .3s}
 html.deck-on .deck:not([data-i="0"]) .s-start .slide-inner{transform:scale(.9);opacity:0}
-
-
-/* ---------- 3D-камера между экранами (18.11, владелец: «переход визуализировать 3D-анимацией») ----------
-   Колода в перспективе. Пройденный экран уходит в глубину и наклоняется, следующий входит своим ходом:
-   Портфолио → Команда — дверь на петлях · Команда → Процесс — встаёт с пола · Процесс → Расчёт — грань куба ·
-   Расчёт → Контакты — переворот карты. Только transform/opacity; два шага назад экран скрыт (.far), чтобы слои не просвечивали. */
-:root{--cam:cubic-bezier(.65,0,.2,1)}
-html.deck-on .deck{perspective:1600px;perspective-origin:50% 45%;background:#050506}
-html.deck-on .slide:not(.s-start){backface-visibility:hidden;-webkit-backface-visibility:hidden;transition:transform 1.15s var(--cam),opacity 1.15s var(--cam),visibility 0s 1.15s}
-/* ещё не открытый экран полностью скрыт (иначе повёрнутая «дверь» рисует клин у края); при входе виден сразу, при уходе назад — до конца движения */
-html.deck-on .slide:not(.s-start):not(.passed){visibility:hidden}
-html.deck-on .slide.passed:not(.s-start){visibility:visible;transition:transform 1.15s var(--cam),opacity 1.15s var(--cam),visibility 0s}
-html.deck-on .s-team{transform-origin:100% 50%;transform:rotateY(-96deg)}
-html.deck-on .s-proc{transform-origin:50% 100%;transform:rotateX(-92deg)}
-html.deck-on .s-calc{transform-origin:0 50%;transform:translate3d(55%,0,0) rotateY(-75deg);opacity:0}
-html.deck-on .s-contact{transform-origin:50% 50%;transform:rotateX(180deg)}
-html.deck-on .slide.passed.is-active{transform:none;opacity:1}
-html.deck-on .slide.passed:not(.is-active):not(.s-start){transform:translate3d(0,-4%,-520px) rotateX(9deg);opacity:.28}
-html.deck-on .slide.far:not(.s-start){visibility:hidden;transition:none}
+html.deck-on .deck:not([data-i="0"]) .s-start .hero-bg,html.deck-on .deck:not([data-i="0"]) .s-start::before{opacity:0}
+.hero-bg,.s-start::before{transition:opacity .6s ease}
+/* полотно сцены: под всеми экранами; пока сцена работает — фоны экранов прозрачные (нет WebGL — прежние фоны) */
+.scene{display:none}
+html.gl-on .scene{display:block;position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;animation:tr-fadein 1.2s ease both}
+html.gl-on.deck-on .deck{position:relative;z-index:1}
+html.gl-on.deck-on .slide{background:transparent}
+html.gl-on.deck-on .s-proc::before{display:none}
 
 /* появление содержимого */
 html.deck-on .slide .reveal{opacity:0;transform:translateY(32px);transition:opacity .8s ease,transform .9s var(--ease)}
