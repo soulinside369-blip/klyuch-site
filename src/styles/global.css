@@ -227,7 +227,10 @@ html.deck-on .deck:not([data-i="0"]) .s-start .slide-inner{transform:scale(.9);o
    Расчёт → Контакты — переворот карты. Только transform/opacity; два шага назад экран скрыт (.far), чтобы слои не просвечивали. */
 :root{--cam:cubic-bezier(.65,0,.2,1)}
 html.deck-on .deck{perspective:1600px;perspective-origin:50% 45%;background:#050506}
-html.deck-on .slide:not(.s-start){backface-visibility:hidden;-webkit-backface-visibility:hidden;transition:transform 1.15s var(--cam),opacity 1.15s var(--cam)}
+html.deck-on .slide:not(.s-start){backface-visibility:hidden;-webkit-backface-visibility:hidden;transition:transform 1.15s var(--cam),opacity 1.15s var(--cam),visibility 0s 1.15s}
+/* ещё не открытый экран полностью скрыт (иначе повёрнутая «дверь» рисует клин у края); при входе виден сразу, при уходе назад — до конца движения */
+html.deck-on .slide:not(.s-start):not(.passed){visibility:hidden}
+html.deck-on .slide.passed:not(.s-start){visibility:visible;transition:transform 1.15s var(--cam),opacity 1.15s var(--cam),visibility 0s}
 html.deck-on .s-team{transform-origin:100% 50%;transform:rotateY(-96deg)}
 html.deck-on .s-proc{transform-origin:50% 100%;transform:rotateX(-92deg)}
 html.deck-on .s-calc{transform-origin:0 50%;transform:translate3d(55%,0,0) rotateY(-75deg);opacity:0}
