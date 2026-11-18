@@ -38,20 +38,53 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
     <span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="sound-label">Звук</span>
   </button>
 
-  <!-- ТРЕЙЛЕР -->
+  <!-- ТРЕЙЛЕР v2 «Поворот ключа»: одна непрерывная «съёмка» механизма замка (план — docs/ТРЕЙЛЕР-v2-и-ОПТИМИЗАЦИЯ.md) -->
   <div class="trailer" id="trailer" aria-hidden="true">
-    <div class="tr-line"></div>
-    <!-- тайминги от старта (после загрузки шрифта): --t вход, --t2 уход, --st шаг волны по буквам -->
-    {trailer.cuts.map((w, k) => <p class={`tr tr-cut tr-cut-${k % 3} has-out`} style={`--len:${w.length};--t:${(0.3 + k * trailer.step).toFixed(2)}s;--t2:${(0.3 + k * trailer.step + trailer.step * 0.7).toFixed(2)}s;--st:14ms;--st2:8ms;--di:.3s;--do:.2s`}><Split text={w} /></p>)}
-    <div class="tr-progress"></div>
-    <p class="tr tr-c tr-soft" style="--t:3.7s;--st:16ms;--di:.6s"><Split text={trailer.proof} /></p>
+    <i class="tv-bar tv-top"></i><i class="tv-bar tv-bot"></i>
+    <i class="tv-mote"></i>
+    <!-- 0,6–1,9 с: разрез замка — ключ входит, пять штифтов-направлений встают на линию среза -->
+    <div class="tv-lock">
+      <svg class="tv-lock-svg" viewBox="0 0 600 260" fill="none">
+        <rect x="40" y="26" width="520" height="208" rx="26" fill="#0D0E11" stroke="#2A2D33" stroke-width="2"/>
+        <rect x="64" y="120" width="472" height="92" rx="14" fill="#111317" stroke="#3A3E45" stroke-width="1.5"/>
+        <line class="tv-shear" x1="64" y1="120" x2="536" y2="120" stroke="#E8B04B" stroke-width="2"/>
+        {[0, 1, 2, 3, 4].map((k) => { const x = 140 + k * 80, d = [24, 12, 32, 18, 28][k]; return (
+          <g class="tv-pin" style={`--k:${k};--d:${-d}px`}>
+            <rect x={x - 13} y="40" width="26" height="150" rx="4" fill="#08090B" stroke="#22252B"/>
+            <path d={`M${x - 8} 44 l16 5 l-16 5 l16 5 l-16 5 l16 5 l-16 5`} stroke="#3A3E45" stroke-width="1.5"/>
+            <g class="tv-stack">
+            <rect class="tv-drv" x={x - 10} y={78 + d} width="20" height={42} rx="3" fill="#5A4519"/>
+            <rect class="tv-kp" x={x - 10} y={120 + d} width="20" height={40 - d / 2} rx="3" fill="#E8B04B"/>
+            </g>
+          </g>); })}
+        <g class="tv-key">
+          <circle cx="-34" cy="178" r="30" fill="none" stroke="#C9962F" stroke-width="12"/>
+          <circle cx="-34" cy="178" r="8" fill="#0D0E11"/>
+          <path d="M-4 170 H500 l18 8 l-18 8 H-4 Z" fill="#C9962F"/>
+          <path d="M100 168 l20 -14 l20 14 l20 -26 l20 26 l20 -8 l20 8 l20 -22 l20 22 l20 -10 l20 10 l20 -18 l20 18" fill="#C9962F"/>
+        </g>
+      </svg>
+      <div class="tv-labels">{trailer.pins.map((t, k) => <span style={`--k:${k}`}>{t}</span>)}</div>
+    </div>
+    <!-- 1,9–3,3 с: боли клиента мерцают, как помехи камеры, и зачёркиваются по ударам -->
+    <div class="tv-pains">{trailer.pains.map((t, k) => <span class={`tv-pain p${k}`} style={`--k:${k}`}>{t}</span>)}</div>
+    <!-- 3,3–4,5 с: поворот ключа, ударная волна, вспышка -->
+    <i class="tv-wave"></i><i class="tv-flash"></i>
+    <p class="tv-title">{trailer.turn}</p>
+    <!-- 4,5–5,9 с: полёт сквозь карточки к «вашему проекту» -->
+    <div class="tv-tunnel">
+      {trailer.tunnel.map((t, k) => <span class={`tv-card c${k}`} style={`--k:${k}`}><i></i><b>{t}</b></span>)}
+      <div class="tv-you"><span>{trailer.proof}</span><b>{trailer.you}</b></div>
+    </div>
+    <!-- 5,9–7,0 с: знак -->
     <div class="tr-key">
       <svg viewBox="0 0 300 120" fill="none" aria-hidden="true">
         <circle class="tr-draw" pathLength="1" cx="60" cy="60" r="40" stroke="#E8B04B" stroke-width="3"/>
         <circle cx="60" cy="60" r="12" stroke="#3A3E45" stroke-width="3"/>
         <path class="tr-draw" pathLength="1" d="M100 60H290M262 60v32M240 60v20M218 60v12" stroke="#E8B04B" stroke-width="3"/>
       </svg>
-      <span class="tr-word" style="--t:5.6s;--st:80ms;--di:.75s"><Split text={brand.name} /></span>
+      <span class="tr-word" style="--t:6.15s;--st:80ms;--di:.75s"><Split text={brand.name} /></span>
+      <span class="tv-sub">{hero.kicker}</span>
     </div>
     <button class="tr-sound" type="button" id="tr-sound"><span class="tr-eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="ts-d">Смотреть со звуком</span><span class="ts-m">Со звуком</span></button>
     <button class="tr-skip" type="button" id="tr-skip">Пропустить ›</button>
@@ -250,60 +283,74 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
     let i = 0, lock = false, on = false, playing = root.classList.contains('trailer-on');
 
-    /* ---------- трейлер ---------- */
+    /* ---------- трейлер v2: одна шкала времени (класс tr-go), пропуск, повтор на месте с кнопки «Трейлер» ---------- */
     let soundReady: () => void = () => {};
     let soundReady0: () => void = () => {};
     const trailerEl = document.getElementById('trailer')!;
+    const T_END = 7000;                                              // 7 с кадров, затем 1,2 с растворения в скважину
+    let tm = 0, goAt = 0, scored = false;
     const endTrailer = () => {
-      if (!playing) return; playing = false;
+      if (!playing) return; playing = false; clearTimeout(tm);
       try { sessionStorage.setItem('ks_trailer', '1'); localStorage.setItem('ks_trailer_at', String(Date.now())); } catch {}
       root.classList.add('trailer-out');
-      setTimeout(() => { root.classList.remove('trailer-on', 'trailer-out'); root.classList.add('trailer-off'); trailerEl.remove(); }, 1300);
+      setTimeout(() => { root.classList.remove('trailer-on', 'trailer-out', 'tr-go'); root.classList.add('trailer-off'); }, 1300);
       setTimeout(() => root.classList.add('hero-in'), 250);
     };
-    if (playing) {
-      // Старт после загрузки шрифта (не дольше 700 мс), чтобы буквы не «прыгали» с системного шрифта.
-      let tm = 0, goAt = 0;
-      const begin = () => { if (root.classList.contains('tr-go')) return; root.classList.add('tr-go'); goAt = performance.now(); tm = window.setTimeout(() => { goal('trailer_full'); endTrailer(); }, 7200); };
-      Promise.race([document.fonts?.ready, new Promise((r) => setTimeout(r, 700))]).then(begin);
-      const skip = () => { clearTimeout(tm); goal('trailer_skip'); endTrailer(); };
-      // Звук по умолчанию включён: партитура стартует, как только браузер разрешит звук (первое касание/клик/клавиша).
-      // Первое касание трейлера — это и есть «включить звук», а не «пропустить». Пропуск — кнопкой, колесом, клавишей, свайпом.
-      const soundBtn0 = document.getElementById('tr-sound')!;
-      const t0 = () => (root.classList.contains('tr-go') ? (performance.now() - goAt) / 1000 : 0);
-      const CUTS = [0, 1, 2, 3, 4].map((k) => 0.3 + k * 0.6);
-      let scored = false;
-      const startScore = () => { if (scored || !playing || !isSoundOn()) return; scored = true; playTrailerScore(t0(), CUTS); paintTr(); };
-      const paintTr = () => {
-        const on = isSoundOn() && soundUnlocked();
-        soundBtn0.classList.toggle('on', on); soundBtn0.classList.toggle('wait', isSoundOn() && !soundUnlocked());
-        soundBtn0.querySelector('.ts-d')!.textContent = on ? 'Выключить звук' : isSoundOn() ? 'Нажмите — включится звук' : 'Смотреть со звуком';
-        soundBtn0.querySelector('.ts-m')!.textContent = on ? 'Без звука' : isSoundOn() ? 'Нажмите — звук' : 'Со звуком';
-      };
-      soundBtn0.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const v = !(isSoundOn() && soundUnlocked());
-        setSound(v); document.getElementById('sound-toggle')?.setAttribute('aria-pressed', String(v)); if (v) goal('sound_on');
-        if (v) { scored = false; startScore(); }
-        paintTr();
-      });
-      soundReady = () => { startScore(); paintTr(); };
-      soundReady0 = paintTr;
+    const begin = () => {
+      if (root.classList.contains('tr-go')) return;
+      root.classList.add('tr-go'); goAt = performance.now();
+      tm = window.setTimeout(() => { goal('trailer_full'); endTrailer(); }, T_END);
+    };
+    const skip = () => { if (!playing) return; goal('trailer_skip'); endTrailer(); };
+    // Звук по умолчанию включён: партитура стартует, как только браузер разрешит звук (первое касание/клик/клавиша).
+    // Первое касание трейлера — это и есть «включить звук», а не «пропустить». Пропуск — кнопкой, колесом, клавишей, свайпом.
+    const soundBtn0 = document.getElementById('tr-sound')!;
+    const t0 = () => (root.classList.contains('tr-go') ? (performance.now() - goAt) / 1000 : 0);
+    const startScore = () => { if (scored || !playing || !isSoundOn()) return; scored = true; playTrailerScore(t0()); paintTr(); };
+    const paintTr = () => {
+      const on = isSoundOn() && soundUnlocked();
+      soundBtn0.classList.toggle('on', on); soundBtn0.classList.toggle('wait', isSoundOn() && !soundUnlocked());
+      soundBtn0.querySelector('.ts-d')!.textContent = on ? 'Выключить звук' : isSoundOn() ? 'Нажмите — включится звук' : 'Смотреть со звуком';
+      soundBtn0.querySelector('.ts-m')!.textContent = on ? 'Без звука' : isSoundOn() ? 'Нажмите — звук' : 'Со звуком';
+    };
+    soundBtn0.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const v = !(isSoundOn() && soundUnlocked());
+      setSound(v); document.getElementById('sound-toggle')?.setAttribute('aria-pressed', String(v)); if (v) goal('sound_on');
+      if (v) { scored = false; startScore(); }
       paintTr();
-      const notSound = (e: Event) => !(e.target instanceof Element && e.target.closest('.tr-sound'));
-      // Касание «съедается» (не пропускает трейлер), только если звук ещё не играл: оно его и включает.
-      let swallow = false;
-      // Состояние снимаем ДО того, как это же касание включит звук (слушатель на window в фазе захвата, зарегистрирован раньше).
-      const mark = (e: Event) => { if (e.target instanceof Node && trailerEl.contains(e.target) && soundPreference() && !soundUnlocked()) swallow = true; };
-      addEventListener('pointerdown', mark, true); addEventListener('touchstart', mark, { capture: true, passive: true });
-      document.getElementById('tr-skip')!.addEventListener('click', (e) => { e.stopPropagation(); skip(); });
-      trailerEl.addEventListener('click', (e) => { if (!notSound(e)) return; if (swallow) { swallow = false; return; } skip(); });
-      addEventListener('wheel', () => playing && skip(), { passive: true });
-      let ty0 = 0;
-      addEventListener('touchstart', (e) => { ty0 = e.touches[0].clientY; }, { passive: true });
-      addEventListener('touchend', (e) => { if (playing && Math.abs(e.changedTouches[0].clientY - ty0) > 50) skip(); }, { passive: true });
-      window.addEventListener('keydown', (e) => { if (playing && notSound(e)) { e.preventDefault(); skip(); } });
-    } else { trailerEl.remove(); }
+    });
+    soundReady = () => { startScore(); paintTr(); };
+    soundReady0 = paintTr;
+    const notSound = (e: Event) => !(e.target instanceof Element && e.target.closest('.tr-sound'));
+    // Касание «съедается» (не пропускает трейлер), только если звук ещё не играл: оно его и включает.
+    let swallow = false;
+    const mark = (e: Event) => { if (playing && e.target instanceof Node && trailerEl.contains(e.target) && soundPreference() && !soundUnlocked()) swallow = true; };
+    addEventListener('pointerdown', mark, true); addEventListener('touchstart', mark, { capture: true, passive: true });
+    document.getElementById('tr-skip')!.addEventListener('click', (e) => { e.stopPropagation(); skip(); });
+    trailerEl.addEventListener('click', (e) => { if (!notSound(e)) return; if (swallow) { swallow = false; return; } skip(); });
+    addEventListener('wheel', () => playing && skip(), { passive: true });
+    let ty0 = 0;
+    addEventListener('touchstart', (e) => { ty0 = e.touches[0].clientY; }, { passive: true });
+    addEventListener('touchend', (e) => { if (playing && Math.abs(e.changedTouches[0].clientY - ty0) > 50) skip(); }, { passive: true });
+    window.addEventListener('keydown', (e) => { if (playing && notSound(e)) { e.preventDefault(); skip(); } });
+    if (playing) {
+      paintTr();
+      // Старт после загрузки шрифта (не дольше 700 мс), чтобы буквы не «прыгали» с системного шрифта.
+      Promise.race([document.fonts?.ready, new Promise((r) => setTimeout(r, 700))]).then(begin);
+    }
+    // Кнопка «Трейлер» в шапке: показать заново без перезагрузки. Клик — жест человека, поэтому звук играет сразу.
+    document.querySelectorAll<HTMLAnchorElement>('.replay').forEach((a) => a.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (playing || reduce) return;
+      if (i !== 0) go(0, true);
+      playing = true; scored = false; swallow = false;
+      root.classList.remove('trailer-off', 'hero-in', 'tr-go', 'trailer-out');
+      root.classList.add('trailer-on');
+      void trailerEl.offsetWidth;                                     // кадры начинаются с нуля
+      setTimeout(() => { begin(); startScore(); paintTr(); }, 30);
+      goal('trailer_replay');
+    }));
 
     /* ---------- дека ---------- */
     // Подгонка под экран: если слайд выше видимой области (панели Safari, низкий телефон), его содержимое

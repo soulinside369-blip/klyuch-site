@@ -56,33 +56,77 @@ a{color:var(--accent)}a:hover{color:var(--accent-hi)}
 html.trailer-on:not(.tr-go) .trailer *{animation-play-state:paused!important}
 @keyframes tr-kill{to{opacity:0;visibility:hidden}}
 .trailer-on body{overflow:hidden}
-.tr{position:absolute;left:50%;top:50%;margin:0;transform:translate(-50%,-50%);white-space:nowrap;text-align:center}
-.tr-line{position:absolute;left:0;top:50%;height:1px;width:100%;background:linear-gradient(90deg,transparent,var(--accent),transparent);transform:scaleX(0);animation:tr-line 3.1s var(--soft) .05s forwards, tr-fade .4s ease 3.3s forwards}
-/* буквы в трейлере: выезжают волной из-под невидимой линии и уходят вверх */
-.tr .w{display:inline-block;overflow:hidden;padding:.12em .02em;margin:-.12em -.02em;vertical-align:top}
-.tr .ch{display:inline-block;transform:translateY(115%) rotate(8deg);opacity:0;
-  animation:ch-in var(--di,.75s) var(--ease) calc(var(--t) + var(--i) * var(--st,28ms)) forwards}
-.tr.has-out .ch{animation:ch-in var(--di,.75s) var(--ease) calc(var(--t) + var(--i) * var(--st,28ms)) forwards,
-  ch-out var(--do,.45s) var(--ease) calc(var(--t2) + var(--i) * var(--st2,14ms)) forwards}
-.tr-soft .ch{transform:translateY(55%);filter:blur(8px);animation-timing-function:var(--soft)!important}
-.tr-soft .w{overflow:visible}
-.tr-soft.has-out .ch{animation:ch-in var(--di) var(--soft) calc(var(--t) + var(--i) * var(--st)) forwards,
-  ch-soft-out var(--do,.7s) cubic-bezier(.55,0,.75,.2) calc(var(--t2) + var(--i) * var(--st2,20ms)) forwards!important}
-@keyframes ch-soft-out{to{opacity:0;transform:translateY(-35%);filter:blur(8px)}}
-.tr-a,.tr-b{font:500 clamp(26px,4vw,60px)/1.1 var(--display);letter-spacing:-.5px}
-.tr-b{color:var(--accent)}
-.tr-cut{font:700 clamp(46px,11vw,176px)/1 var(--display);letter-spacing:-3px}
-/* длинное слово («Автоматизация») не должно вылезать за экран телефона: размер по длине слова */
-.tr-cut{font-size:min(clamp(46px,11vw,176px),calc(92vw / (var(--len,8) * .78)))}
-.tr-cut-1{color:var(--accent)}
-.tr-cut-2 .ch{-webkit-text-stroke:1.5px var(--text);color:transparent}
-.tr-progress{position:absolute;left:50%;top:calc(50% + clamp(40px,7vw,110px));width:min(520px,60vw);height:2px;margin-left:calc(min(520px,60vw) / -2);background:var(--accent);transform:scaleX(0);transform-origin:left;
-  animation:tr-prog 3s linear .3s forwards, tr-fade .35s ease 3.35s forwards}
-.tr-c{font:500 clamp(20px,2.8vw,38px)/1.1 var(--display);color:var(--dim);top:34%}
-@media(max-width:640px){.tr-c{white-space:normal;width:88vw}}
-.tr-key{position:absolute;left:50%;top:57%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:18px}
-.tr-key svg{width:min(340px,60vw);opacity:0;animation:tr-in .6s var(--soft) 5.3s forwards}
-.tr-draw{stroke-dasharray:1;stroke-dashoffset:1;animation:draw .9s var(--soft) 5.35s forwards}
+/* ---------- трейлер v2 «Поворот ключа»: все времена — от старта (класс tr-go), секунды как в плане ----------
+   Анимируются только transform / opacity / filter — работу делает видеочип. Кадры и звук (playTrailerScore) — по одной шкале. */
+.trailer>*{position:absolute}
+/* 0,0 — киношные полосы 2,39:1 и зерно поверх (общий body::after) */
+.tv-bar{left:0;right:0;height:max(9vh,calc((100vh - 100vw / 2.39) / 2));background:#000;transform:scaleY(0);z-index:5;animation:tv-bar .6s var(--soft) .05s forwards}
+.tv-top{top:0;transform-origin:top}.tv-bot{bottom:0;transform-origin:bottom}
+@keyframes tv-bar{to{transform:scaleY(1)}}
+/* 0,2–0,9 — латунная пылинка вспыхивает и растягивается в линию среза */
+.tv-mote{left:50%;top:50%;width:8px;height:8px;margin:-4px;border-radius:50%;background:#FFE3A6;box-shadow:0 0 18px 6px rgba(232,176,75,.8);opacity:0;animation:tv-mote .8s var(--soft) .2s forwards}
+@keyframes tv-mote{0%{opacity:0;transform:scale(.2)}35%{opacity:1;transform:scale(1.4)}70%{opacity:1;transform:scaleX(30) scaleY(.25)}100%{opacity:0;transform:scaleX(70) scaleY(.12)}}
+/* 0,55–1,95 — разрез замка */
+.tv-lock{left:50%;top:50%;width:min(720px,92vw);translate:-50% -54%;opacity:0;animation:tv-lock-in .45s var(--soft) .55s forwards,tv-lock-dim .35s ease 1.95s forwards,tv-lock-back .25s ease 3.2s forwards,tv-turn .5s cubic-bezier(.7,0,.2,1) 3.45s forwards,tv-fade .3s ease 3.95s forwards}
+.tv-lock-svg{display:block;width:100%;height:auto;overflow:visible}
+@keyframes tv-lock-in{from{opacity:0;transform:scale(.9);filter:blur(8px)}to{opacity:1;transform:none;filter:none}}
+@keyframes tv-lock-dim{to{opacity:.16;transform:scale(.9);filter:blur(3px)}}
+@keyframes tv-lock-back{to{opacity:1;transform:scale(1);filter:none}}
+@keyframes tv-turn{to{opacity:1;transform:rotate(90deg) scale(.82)}}
+.tv-key{transform-box:fill-box;transform:translateX(-130%);animation:tv-key .5s cubic-bezier(.2,.8,.2,1) .65s forwards}
+@keyframes tv-key{to{transform:none}}
+.tv-stack{animation:tv-pin .2s cubic-bezier(.3,1.7,.5,1) calc(1.05s + var(--k) * .17s) forwards}
+@keyframes tv-pin{to{transform:translateY(var(--d))}}
+.tv-shear{opacity:.18;animation:tv-shear .5s ease 1.9s forwards}
+@keyframes tv-shear{40%{opacity:1;filter:drop-shadow(0 0 6px #E8B04B)}100%{opacity:.6}}
+.tv-labels{position:relative;display:grid;grid-template-columns:repeat(5,1fr);width:calc(400 / 600 * 100%);margin:6px auto 0;margin-left:calc(100 / 600 * 100%)}
+.tv-labels span{text-align:center;white-space:nowrap;font:500 clamp(9px,1.05vw,13px)/1.2 var(--mono);letter-spacing:.5px;color:var(--accent);opacity:0;transform:translateY(8px);animation:sc-in .3s var(--ease) calc(1.12s + var(--k) * .17s) forwards,tv-fade .25s ease 2.1s forwards}
+/* 1,9–3,3 — боли: мерцание «помех», затем латунная черта по удару */
+.tv-pains{inset:0}
+.tv-pain{position:absolute;left:var(--x);top:var(--y);font:700 clamp(22px,3vw,46px)/1.1 var(--display);letter-spacing:-.02em;color:var(--text);white-space:nowrap;opacity:0;
+  animation:tv-glitch .45s steps(1) calc(2s + var(--k) * .12s) forwards,tv-fade .25s ease 3.2s forwards}
+.tv-pain::after{content:'';position:absolute;left:-4%;right:-4%;top:52%;height:.09em;background:var(--accent);box-shadow:0 0 14px rgba(232,176,75,.9);transform:scaleX(0);transform-origin:left;animation:of-strike .22s var(--ease) calc(2.35s + var(--k) * .25s) forwards}
+.p0{--x:9%;--y:22%}.p1{--x:38%;--y:35%}.p2{--x:15%;--y:57%}.p3{--x:48%;--y:69%}
+@keyframes tv-glitch{0%{opacity:.9;transform:translateX(-6px);text-shadow:3px 0 rgba(255,60,60,.7),-3px 0 rgba(60,220,255,.7)}20%{opacity:0}35%{opacity:.7;transform:translateX(5px)}55%{opacity:.25}70%{opacity:1;transform:none;text-shadow:2px 0 rgba(255,60,60,.4),-2px 0 rgba(60,220,255,.4)}100%{opacity:.85;transform:none;text-shadow:none}}
+/* 3,75 — ударная волна и вспышка в момент поворота */
+.tv-wave{left:50%;top:50%;width:120px;height:120px;margin:-60px;border:2px solid var(--accent);border-radius:50%;opacity:0;box-shadow:0 0 30px rgba(232,176,75,.7),inset 0 0 30px rgba(232,176,75,.5);animation:tv-wave .9s cubic-bezier(.1,.7,.3,1) 3.78s forwards}
+@keyframes tv-wave{0%{opacity:1;transform:scale(.3)}100%{opacity:0;transform:scale(9)}}
+.tv-flash{inset:0;background:radial-gradient(circle at 50% 50%,rgba(255,236,190,.9),rgba(232,176,75,.35) 30%,transparent 65%);opacity:0;animation:tv-flash .6s ease-out 3.78s forwards}
+@keyframes tv-flash{0%{opacity:0}15%{opacity:1}100%{opacity:0}}
+.tv-title{left:50%;top:50%;margin:0;transform:translate(-50%,-50%);font:700 clamp(36px,7vw,120px)/1 var(--display);letter-spacing:-.03em;white-space:nowrap;color:var(--text);text-shadow:0 0 40px rgba(232,176,75,.45);opacity:0;
+  animation:tv-title-in .5s var(--soft) 3.88s forwards,tv-title-out .3s ease 4.42s forwards}
+@keyframes tv-title-in{from{opacity:0;filter:blur(14px);letter-spacing:.06em}to{opacity:1;filter:none;letter-spacing:-.03em}}
+@keyframes tv-title-out{to{opacity:0;transform:translate(-50%,-50%) scale(1.15);filter:blur(10px)}}
+/* 4,5–5,9 — полёт сквозь карточки к «вашему проекту» */
+.tv-tunnel{inset:0;perspective:900px;perspective-origin:50% 50%}
+.tv-card{position:absolute;left:50%;top:50%;display:flex;align-items:center;gap:10px;padding:clamp(16px,2vw,26px) clamp(22px,2.8vw,38px);border:1px solid rgba(232,176,75,.5);border-radius:18px;background:linear-gradient(160deg,#1A1C21,#0E0F12);box-shadow:0 20px 60px rgba(0,0,0,.6);opacity:0;
+  font:600 clamp(18px,2.6vw,38px)/1 var(--display);color:var(--text);white-space:nowrap;animation:tv-fly .95s cubic-bezier(.4,0,.8,.6) calc(4.5s + var(--k) * .14s) forwards}
+.tv-card i{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
+.c0{--x:-26vw;--y:-18vh}.c1{--x:24vw;--y:-14vh}.c2{--x:-22vw;--y:18vh}.c3{--x:26vw;--y:16vh}
+@keyframes tv-fly{0%{opacity:0;transform:translate(-50%,-50%) translate3d(calc(var(--x) * .35),calc(var(--y) * .35),-700px)}20%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) translate3d(calc(var(--x) * 1.5),calc(var(--y) * 1.5),520px)}}
+.tv-you{position:absolute;left:50%;top:50%;display:flex;flex-direction:column;align-items:center;gap:10px;padding:clamp(22px,3vw,40px) clamp(26px,4vw,56px);border:1.5px solid var(--accent);border-radius:22px;background:radial-gradient(120% 120% at 50% 0%,rgba(232,176,75,.22),#0E0F12 60%);
+  box-shadow:0 0 0 1px rgba(232,176,75,.2),0 0 80px rgba(232,176,75,.35);text-align:center;opacity:0;transform:translate(-50%,-50%) translateZ(-1400px);
+  animation:tv-you .55s cubic-bezier(.15,.8,.25,1) 5.02s forwards,tv-you-out .3s cubic-bezier(.6,0,.9,.4) 5.82s forwards}
+.tv-you span{font:400 clamp(11px,1.2vw,14px) var(--mono);letter-spacing:2px;text-transform:uppercase;color:var(--accent)}
+.tv-you b{font:700 clamp(24px,3.6vw,56px)/1.05 var(--display);letter-spacing:-.02em;color:var(--text)}
+@keyframes tv-you{to{opacity:1;transform:translate(-50%,-50%)}}
+@keyframes tv-you-out{to{opacity:0;transform:translate(-50%,-50%) scale(.1)}}
+/* 5,9–7,0 — знак */
+.tr-key{left:50%;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:18px}
+.tr-key svg{width:min(340px,60vw);opacity:0;animation:tr-in .6s var(--soft) 5.95s forwards}
+.tr-draw{stroke-dasharray:1;stroke-dashoffset:1;animation:draw .9s var(--soft) 6s forwards}
+.tv-sub{font:400 clamp(11px,1.2vw,14px)/1 var(--mono);letter-spacing:3px;text-transform:uppercase;color:var(--dim);opacity:0;animation:tr-fadein .6s ease 6.5s forwards}
+@keyframes tv-fade{to{opacity:0}}
+@media(max-width:640px){
+  .tv-bar{height:13vh}
+  .tv-pain{left:7%!important;font-size:clamp(17px,5.3vw,24px)}
+  .p0{--y:24%}.p1{--y:37%}.p2{--y:52%}.p3{--y:65%}
+  .tv-lock{width:78vw;translate:-46% -54%}
+  .tv-labels{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 12px;width:100%;margin:14px 0 0}
+  .tv-labels span{font-size:11px;letter-spacing:.5px}
+  .c0{--x:-24vw;--y:-22vh}.c1{--x:22vw;--y:-14vh}.c2{--x:-22vw;--y:16vh}.c3{--x:24vw;--y:24vh}
+  .tv-you{width:84vw}
+}
 .tr-word{font:700 clamp(40px,7vw,110px)/1 var(--display);text-shadow:0 0 40px rgba(232,176,75,.4)}
 .tr-word .w{padding:.15em .1em}
 .tr-word .ch{margin:0 .22em;transform:translateY(120%) scale(.6);filter:blur(10px);opacity:0;animation:ch-in var(--di,1.2s) var(--soft) calc(var(--t) + var(--i) * var(--st,140ms)) forwards}
@@ -90,7 +134,7 @@ html.trailer-on:not(.tr-go) .trailer *{animation-play-state:paused!important}
 .tr-skip:hover{color:var(--text);border-color:var(--text)}
 /* «Пропустить» показывает, сколько осталось: золотая полоса заполняет кнопку за время трейлера */
 .tr-skip{overflow:hidden;isolation:isolate}
-.tr-skip::after{content:'';position:absolute;inset:auto 0 0 0;height:2px;background:var(--accent);transform:scaleX(0);transform-origin:left;animation:tr-prog 7.2s linear forwards;z-index:-1}
+.tr-skip::after{content:'';position:absolute;inset:auto 0 0 0;height:2px;background:var(--accent);transform:scaleX(0);transform-origin:left;animation:tr-prog 7s linear forwards;z-index:-1}
 /* «Смотреть со звуком» */
 .tr-sound{position:absolute;left:var(--pad);bottom:28px;display:inline-flex;align-items:center;gap:10px;min-height:40px;background:none;border:1px solid rgba(232,176,75,.55);color:var(--accent);border-radius:999px;padding:0 18px;font:400 12px var(--mono);letter-spacing:1.5px;cursor:pointer;
   opacity:0;animation:tr-fadein .6s ease .4s forwards}
