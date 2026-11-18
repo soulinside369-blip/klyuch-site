@@ -4,6 +4,7 @@
 // Дека включается, только если каждый слайд помещается в экран; иначе — обычная прокрутка.
 import Base from '../layouts/Base.astro';
 import CasePanel from '../components/CasePanel.astro';
+import OfferCard from '../components/OfferCard.astro';
 import Split from '../components/Split.astro';
 import { brand, hero, trailer, publishedCases, contact, reviews, team, work, services, process, calc } from '../data/site';
 // Карусель офферов: заголовок режется на полосы-«штифты», каждая влетает со своим сдвигом (em) и встаёт в линию.
@@ -87,6 +88,10 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
         </div>
         <p class="speed reveal" id="speed" aria-hidden="true"><span class="speed-dot" aria-hidden="true"></span><span id="speed-text"></span></p>
       </div>
+      <!-- справа: стопка живых карточек офферов (листается вместе с каруселью; вместо скважины — решение владельца 18.11) -->
+      <div class="of-cards" id="of-cards" aria-hidden="true">
+        {services.items.map((d, k) => <OfferCard k={k} name={d.name} scene={d.scene as 'site' | 'app' | 'ads' | 'auto'} />)}
+      </div>
     </section>
 
     <!-- 2. ПОРТФОЛИО (раскрывается сквозь скважину) -->
@@ -102,12 +107,6 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
       </div>
     </section>
 
-    <!-- скважина: над портфолио, пока мы на первом слайде -->
-    <button class="keyhole" type="button" data-go="1">
-      <canvas class="k-gl" aria-hidden="true"></canvas>
-      <svg viewBox="0 0 100 100" fill="none" aria-hidden="true"><path d={keyholePath} stroke="#E8B04B" stroke-width="1.2" vector-effect="non-scaling-stroke"/></svg>
-      <span class="keyhole-label"><span class="kl-d">Загляните внутрь ↓</span><span class="kl-m">Открыть кейсы</span></span>
-    </button>
 
     <!-- 3. КОМАНДА (дверь справа): вес и обещание -->
     <section class="slide s-team" id="team" aria-label="Команда">
@@ -332,16 +331,16 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
     // иначе она ложится поверх заголовка. Те же --kx/--ky/--ks использует маска перехода и растворение трейлера.
     const placeKey = () => {
       const st = root.style;
-      if (innerWidth > 900 || !on) { ['--kx', '--ky', '--ks'].forEach((p) => st.removeProperty(p)); root.classList.remove('no-key'); return; }
-      root.classList.remove('no-key');                                // со скважиной подсказка свайпа не нужна → текст ниже, места больше
+      if (innerWidth > 900 || !on) { ['--kx', '--ky', '--ks', '--cw', '--ch'].forEach((p) => st.removeProperty(p)); root.classList.remove('no-key'); return; }
+      root.classList.remove('no-key');
       const barB = document.querySelector('.bar')!.getBoundingClientRect().bottom;
       const heroT = document.querySelector('.s-start .slide-inner')!.getBoundingClientRect().top;
-      const room = heroT - barB - 12, LABEL = 40;                     // под скважиной — кнопка-подпись «Открыть кейсы»
-      const k = Math.max(64, Math.min(170, innerWidth * 0.42, (room - LABEL) * 0.95));
-      root.classList.toggle('no-key', room - LABEL < 64);
-      const top = barB + 6 + (room - k - LABEL) / 2;
-      st.setProperty('--ks', `${k}px`); st.setProperty('--kx', `${innerWidth / 2}px`);
-      st.setProperty('--ky', `${top + k * 0.4}px`);
+      const room = heroT - barB - 42;                                   // карточки встают между шапкой и текстом: сверху 28 px на стопку, снизу 14
+      const h = Math.min(260, room), w = Math.min(innerWidth - 56, h * 1.45);
+      root.classList.toggle('no-key', h < 140);                          // мало места — карточек нет, есть подсказка свайпа
+      const cy = barB + 28 + (room - h) / 2 + h / 2;
+      st.setProperty('--ch', `${h}px`); st.setProperty('--cw', `${w}px`); st.setProperty('--ks', `${h * 0.6}px`);
+      st.setProperty('--kx', `${innerWidth / 2}px`); st.setProperty('--ky', `${cy}px`);
     };
     // Содержимое выросло (ошибки формы, статус, раскрытая панель) — пересчитать масштаб только этого слайда.
     if ('ResizeObserver' in window) {
@@ -469,9 +468,11 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
       const panes = [...document.querySelectorAll<HTMLElement>('.of')];
       const cta = document.getElementById('hero-cta');
       const pauseBtn = document.getElementById('of-pause');
+      const cards = [...document.querySelectorAll<HTMLElement>('.oc')];
       let k = 0;
       const show = (n: number, user = false) => {
         if (n === k) return;
+        const prevK = k;
         const prev = panes[k];
         prev.classList.remove('on'); prev.classList.add('off'); prev.setAttribute('aria-hidden', 'true');
         setTimeout(() => prev.classList.remove('off'), 650);
@@ -480,10 +481,15 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
         panes[k].classList.remove('off'); panes[k].classList.add('on'); panes[k].setAttribute('aria-hidden', 'false');
         tabs[k].classList.add('on'); tabs[k].setAttribute('aria-selected', 'true');
         if (cta) cta.dataset.pain = panes[k].dataset.pain;
-        root.classList.remove('k-tick'); void root.offsetWidth; root.classList.add('k-tick');   // свет в скважине вспыхивает — «ключ повернулся»
+        // карточки: передняя улетает назад по дуге, следующая выходит вперёд и проигрывает свою сцену заново
+        const out = cards[prevK];
+        cards.forEach((c, idx) => { c.style.setProperty('--o', String((idx - k + cards.length) % cards.length)); c.classList.toggle('on', idx === k); });
+        if (out && out !== cards[k]) { out.classList.remove('out'); void out.offsetWidth; out.classList.add('out'); setTimeout(() => out.classList.remove('out'), 850); }
+        root.classList.remove('k-tick'); void root.offsetWidth; root.classList.add('k-tick');   // свет за карточками вспыхивает
         if (user) { feel('tick'); goal('offer', false); }
       };
       tabs.forEach((t, n) => t.addEventListener('click', () => show(n, true)));
+      document.getElementById('of-cards')?.addEventListener('click', () => cta?.click());
       box?.addEventListener('animationend', (e) => { if ((e.target as HTMLElement).classList.contains('of-bar')) show((k + 1) % panes.length); });
       box?.addEventListener('focusin', (e) => { if ((e.target as HTMLElement).matches(':focus-visible')) box.classList.add('hold'); });
       box?.addEventListener('focusout', () => box.classList.remove('hold'));
@@ -540,8 +546,8 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
       // Экономно: центр скважины считаем при смене размера, а не каждый кадр; переменные пишем, только пока они меняются
       // (запись в корень пересчитывает стили страницы — иначе на слабом телефоне подтормаживает).
       let tx = 0, ty = 0, kcx = 0, kcy = 0, wx = '', wy = '';
-      const keyEl = document.querySelector<HTMLElement>('.keyhole');
-      const measureKey = () => { if (!keyEl) return; const r = keyEl.getBoundingClientRect(); kcx = r.left + r.width / 2; kcy = r.top + r.height * 0.4; };
+      const keyEl = document.querySelector<HTMLElement>('.of-cards');
+      const measureKey = () => { if (!keyEl) return; const r = keyEl.getBoundingClientRect(); kcx = r.left + r.width / 2; kcy = r.top + r.height * 0.5; };
       addEventListener('resize', () => setTimeout(measureKey, 200)); setTimeout(measureKey, 300);
       const loop = () => {
         if (Math.abs(mx - cx) + Math.abs(my - cy) > 0.3) { cx += (mx - cx) * 0.2; cy += (my - cy) * 0.2; cursor.style.transform = `translate(${cx}px, ${cy}px)`; }
@@ -565,13 +571,6 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
       });
     }
 
-    /* ---------- живая скважина: WebGL-свет за дверью (десктоп с мышью; грузится после страницы) ---------- */
-    if (matchMedia('(pointer: fine)').matches && innerWidth > 900 && !reduce) {
-      const boot = () => import('../scripts/keyhole-gl').then((m) => m.initKeyholeGL()).catch(() => {});
-      const idle = () => ('requestIdleCallback' in window ? requestIdleCallback(boot, { timeout: 2500 }) : setTimeout(boot, 600));
-      if (document.readyState === 'complete') idle(); else addEventListener('load', idle);
-    }
-
     /* ---------- живое доказательство: скорость загрузки у самого посетителя ---------- */
     addEventListener('load', () => setTimeout(() => {
       const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
@@ -592,7 +591,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
     armSoundFromPreference(() => { soundReady(); paintSound(); }); paintSound(); soundReady0();
 
     /* ---------- нажатия кнопок ---------- */
-    document.querySelectorAll<HTMLElement>('.btn, .big-link, .keyhole, .dot').forEach((el) =>
+    document.querySelectorAll<HTMLElement>('.btn, .big-link, .of-cards, .dot').forEach((el) =>
       el.addEventListener('pointerdown', () => { if (!el.matches('[data-go]')) feel('press'); }));
 
     /* ---------- телефон: палец — фонарик, наклон — свет в скважине ---------- */

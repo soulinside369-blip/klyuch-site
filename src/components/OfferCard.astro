@@ -1,0 +1,61 @@
+---
+// Живая карточка оффера на главном экране (справа, вместо скважины). Сцена проигрывается заново каждый раз,
+// когда карточка выходит вперёд (.oc.on); цифр нет — только интерфейс «как это работает».
+interface Props { k: number; name: string; scene: 'site' | 'app' | 'ads' | 'auto' }
+const { k, name, scene } = Astro.props;
+const bars = [34, 46, 40, 58, 66, 78, 92];
+---
+<div class={`oc oc-${scene}${k === 0 ? ' on' : ''}`} style={`--o:${k}`}>
+  <div class="oc-head"><span class="oc-n">0{k + 1}</span><span class="oc-name">{name}</span><span class="oc-live"><i></i>в работе</span></div>
+  <div class="oc-scene">
+    {scene === 'site' && (
+      <div class="sc-site">
+        <div class="sb-bar"><i></i><i></i><i></i><span>ваш-сайт.рф</span></div>
+        <div class="sb-body">
+          <b class="sb-nav"></b>
+          <b class="sb-h1"></b><b class="sb-h2"></b>
+          <b class="sb-p"></b>
+          <span class="sb-btn">Оставить заявку</span>
+          <div class="sb-cards"><b></b><b></b><b></b></div>
+        </div>
+        <i class="sb-cursor"></i>
+        <span class="sb-toast"><i></i>Новая заявка</span>
+      </div>
+    )}
+    {scene === 'app' && (
+      <div class="sc-app">
+        <div class="sp-phone">
+          <span class="sp-push"><i></i>Задача закрыта</span>
+          <b class="sp-title"></b>
+          {[0, 1, 2].map((j) => <div class="sp-row" style={`--j:${j}`}><i></i><b></b><s></s></div>)}
+          <div class="sp-tabs"><i></i><i></i><i></i><i></i></div>
+        </div>
+        <div class="sp-side">
+          <span style="--j:0">Личный кабинет</span><span style="--j:1">Интеграции</span><span style="--j:2">Приложение</span>
+        </div>
+      </div>
+    )}
+    {scene === 'ads' && (
+      <div class="sc-ads">
+        <div class="sa-ch">{['Поиск', 'Соцсети', 'Медийная', 'Наружная'].map((t, j) => <span style={`--j:${j}`}>{t}</span>)}</div>
+        <div class="sa-chart">
+          {bars.map((h, j) => <b style={`--h:${h}%;--j:${j}`}></b>)}
+          <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M2 78 L18 66 L34 70 L50 50 L66 42 L82 26 L98 10" /></svg>
+        </div>
+        <div class="sa-fun">{['Показы', 'Клики', 'Заявки', 'Сделки'].map((t, j) => <span style={`--j:${j}`}>{t}</span>)}</div>
+      </div>
+    )}
+    {scene === 'auto' && (
+      <div class="sc-auto">
+        <svg class="sf-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M22 24 H78" /><path d="M78 24 V76" /><path d="M78 76 H22" />
+        </svg>
+        <span class="sf-node n1">Заявка</span><span class="sf-node n2">CRM</span>
+        <span class="sf-node n3">Бот</span><span class="sf-node n4">Менеджер</span>
+        <span class="sf-ai">ИИ</span>
+        <span class="sf-xls">Excel</span>
+        <i class="sf-dot d1"></i><i class="sf-dot d2"></i><i class="sf-dot d3"></i>
+      </div>
+    )}
+  </div>
+</div>
