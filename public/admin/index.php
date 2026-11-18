@@ -131,7 +131,7 @@ if ($action && $action !== 'logout') {
   } elseif ($action === 'note') {
     $t = trim(mb_substr((string)($_POST['text'] ?? ''), 0, 2000));
     if ($t !== '') { $lead['notes'][] = ['at' => date('c'), 'text' => $t]; ks_lead_save($lead); }
-  } elseif ($action === 'delete' && ($_POST['confirm'] ?? '') === $lead['short']) {
+  } elseif ($action === 'delete' && ($_POST['confirm'] ?? '') === 'yes') {
     ks_lead_delete($id); go($self);
   }
   go("$self?id=" . urlencode($id));
@@ -203,7 +203,7 @@ if ($id !== '') {
       <p class="muted">Удаление нельзя отменить. Это нужно, например, по просьбе человека удалить его данные (152-ФЗ).</p>
       <form method="post" class="stack">
         <input type="hidden" name="csrf" value="<?= h(csrf()) ?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?= h($lead['id']) ?>">
-        <label>Для подтверждения введите номер <?= h($lead['short']) ?><input name="confirm" autocomplete="off" required></label>
+        <label class="check"><input type="checkbox" name="confirm" value="yes" required> Да, удалить заявку №<?= h($lead['short']) ?> без возможности восстановить</label>
         <button class="btn btn-danger">Удалить навсегда</button>
       </form>
     </details>
@@ -302,6 +302,8 @@ h2{margin:28px 0 10px;font-size:13px;letter-spacing:1.5px;text-transform:upperca
 .stack{display:flex;flex-direction:column;gap:12px;max-width:420px}
 label{display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--dim)}
 input,textarea{width:100%;min-height:46px;padding:10px 14px;border:1px solid var(--line2);border-radius:12px;background:var(--bg2);color:var(--text);font:inherit;font-size:16px}
+label.check{flex-direction:row;align-items:center;gap:12px;min-height:44px;color:var(--text);cursor:pointer}
+label.check input{width:22px;height:22px;min-height:0;flex:none;padding:0;accent-color:var(--red)}
 input:focus,textarea:focus{outline:2px solid var(--acc);outline-offset:1px;border-color:transparent}
 .auth{max-width:440px;padding-top:12vh}.auth h1{margin:28px 0 12px}
 .tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:4px -16px 12px;padding:0 16px}
