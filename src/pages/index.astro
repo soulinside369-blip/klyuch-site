@@ -499,13 +499,14 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
       const atEdge = (dy > 0 && i === slides.length - 1) || (dy < 0 && i === 0);
       const k = atEdge ? 0.14 : 0.32;                             // у края сильнее сопротивление
       setDrag(Math.max(-90, Math.min(90, -dy * k)));
+      dispatchEvent(new CustomEvent('scene:drag', { detail: Math.max(-0.45, Math.min(0.45, dy / innerHeight * (atEdge ? 0.25 : 1.1))) }));   // фигура перетекает под пальцем
       const nowArmed = !atEdge && Math.abs(dy) > THRESHOLD;
       if (nowArmed !== armed) { armed = nowArmed; root.classList.toggle('armed', armed); if (armed) feel('tick'); }
     }, { passive: false });
     window.addEventListener('touchend', (e) => {
       if (y0 === null) return;
       const dy = y0 - e.changedTouches[0].clientY; y0 = null;
-      root.classList.remove('dragging', 'armed'); setDrag(0);
+      root.classList.remove('dragging', 'armed'); setDrag(0); dispatchEvent(new CustomEvent('scene:drag', { detail: 0 }));
       if (!dragging) return;
       if (Math.abs(dy) > THRESHOLD) step(dy > 0 ? 1 : -1);
       else if (Math.abs(dy) > 30 && ((dy > 0 && i === slides.length - 1) || (dy < 0 && i === 0))) feel('edge');
@@ -560,6 +561,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
         cards.forEach((c, idx) => { c.style.setProperty('--o', String((idx - k + cards.length) % cards.length)); c.classList.toggle('on', idx === k); });
         if (out && out !== cards[k]) { out.classList.remove('out'); void out.offsetWidth; out.classList.add('out'); setTimeout(() => out.classList.remove('out'), 850); }
         root.classList.remove('k-tick'); void root.offsetWidth; root.classList.add('k-tick');   // свет за карточками вспыхивает
+        dispatchEvent(new CustomEvent('scene:pulse', { detail: 0.45 }));
         if (user) { feel('tick'); goal('offer', false); }
       };
       tabs.forEach((t, n) => t.addEventListener('click', () => show(n, true)));
@@ -598,7 +600,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
         const parts = ['service', 'budget', 'term'].map((k) => pick[k]).filter(Boolean);
         const done = parts.length === 3;
         if (sum) sum.innerHTML = `<b>${parts.join(' · ')}</b>${done ? `<span>${sum.dataset.ready}</span>` : ''}`;
-        if (done && !lock?.classList.contains('open')) { lock?.classList.add('open'); feel('unlock'); goal('calc_done'); } else if (first) feel('tick');
+        if (done && !lock?.classList.contains('open')) { lock?.classList.add('open'); feel('unlock'); goal('calc_done'); dispatchEvent(new CustomEvent('scene:pulse', { detail: 1.4 })); } else if (first) { feel('tick'); dispatchEvent(new CustomEvent('scene:pulse', { detail: 0.4 })); }
         const s = hid('service'), b = hid('budget'), t = hid('task');
         if (s) s.value = pick.service || ''; if (b) b.value = pick.budget || ''; if (t) t.value = pick.term ? `Срок: ${pick.term}` : '';
         if (brief) { brief.hidden = false; brief.querySelector('span')!.textContent = parts.join(' · '); }
@@ -761,7 +763,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
           // Нет PHP (GitHub Pages, статичный хостинг): сервер отдаёт 404/405 или сам файл вместо JSON.
           if ([404, 405, 501].includes(r.status) || !(r.headers.get('content-type') || '').includes('json')) { showFallback(); if (btn) btn.disabled = false; return; }
           const j = await r.json().catch(() => ({}));
-          if (r.ok && j.ok) { feel('success'); goal('lead', false); await new Promise((ok) => setTimeout(ok, 350)); const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/'; location.href = base + 'thanks/' + (j.id ? `?n=${encodeURIComponent(j.id)}` : ''); return; }
+          if (r.ok && j.ok) { feel('success'); goal('lead', false); dispatchEvent(new CustomEvent('scene:pulse', { detail: 1.6 })); await new Promise((ok) => setTimeout(ok, 350)); const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/'; location.href = base + 'thanks/' + (j.id ? `?n=${encodeURIComponent(j.id)}` : ''); return; }
           feel('error'); if (status) status.textContent = 'Не удалось отправить. Напишите нам в Telegram или позвоните.';
         } catch { feel('error'); if (status) status.textContent = 'Нет связи. Напишите нам в Telegram или позвоните.'; }
         if (btn) btn.disabled = false;

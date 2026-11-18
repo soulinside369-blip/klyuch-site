@@ -66,12 +66,12 @@ function shapes(N: number): Float32Array[] {
 }
 
 // Позиция и масштаб фигуры на каждом экране: [x, y, масштаб, яркость] — компьютер / телефон. Фигура не спорит с текстом.
-const PLACE_D: number[][] = [[0.12, -0.02, 1.15, 0.34], [0, 0, 1.3, 0.3], [0.6, -0.05, 0.8, 0.42], [0, 0.04, 1.08, 0.5], [0.53, -0.02, 0.6, 0.8], [0.02, 0.02, 1.1, 0.55]];
+const PLACE_D: number[][] = [[0.12, -0.02, 1.15, 0.34], [0, 0, 1.3, 0.3], [0.6, -0.05, 0.8, 0.42], [0, 0.04, 1.08, 0.5], [0.53, 0.05, 0.52, 0.8], [0.02, 0.02, 1.1, 0.55]];
 const PLACE_M: number[][] = [[0, 0.42, 0.72, 0.35], [0, 0, 1.1, 0.28], [0, 0.4, 0.62, 0.4], [0, 0.1, 0.9, 0.32], [0, 0.5, 0.5, 0.5], [0, 0.3, 0.8, 0.4]];
 
 const VS = `
 attribute vec3 a0,a1,a2,a3,a4,a5; attribute vec4 aR;
-uniform float uP,uT,uAsp,uSz,uRm; uniform vec2 uM; uniform vec4 uPl;
+uniform float uP,uT,uAsp,uSz,uRm,uPulse,uRep; uniform vec2 uM,uMp; uniform vec4 uPl;
 varying float vA,vDepth;
 float w(float k){return clamp(1.-abs(uP-k),0.,1.);}
 void main(){
@@ -83,12 +83,15 @@ void main(){
   float ay=sin(uT*.25)*.35*(1.-uRm)+sin(f*3.14159)*1.6*(1.-uRm)+uM.x*.35, ax=.12+uM.y*.22+sin(f*3.14159)*.35;
   float cy=cos(ay),sy=sin(ay); p.xz=mat2(cy,-sy,sy,cy)*p.xz;
   float cx=cos(ax),sx=sin(ax); p.yz=mat2(cx,-sx,sx,cx)*p.yz;
-  p*=uPl.z;
+  p*=uPl.z*(1.+uPulse*.07*(.4+aR.w));                         // «вдох» сцены на событие (оффер, замок, заявка)
   float d=3.2-p.z;
   vec2 q=p.xy*2.2/d; q.x/=uAsp; q+=uPl.xy;
+  // частицы расступаются вокруг курсора/пальца и светлеют рядом с ним
+  vec2 dd=q-uMp; dd.x*=uAsp; float near=exp(-dot(dd,dd)*12.)*uRep;
+  vec2 push=normalize(dd+1e-5)*.14*near; push.x/=uAsp; q+=push;
   gl_Position=vec4(q,0.,1.);
   gl_PointSize=uSz*(.55+aR.w*.9)*(3.2/d);
-  vDepth=clamp((p.z+1.2)/2.4,0.,1.); vA=uPl.w;
+  vDepth=clamp((p.z+1.2)/2.4,0.,1.); vA=uPl.w*(1.+near*.9+uPulse*.7);
 }`;
 const FS = `
 precision mediump float; uniform vec3 uCol; uniform float uDark; varying float vA,vDepth;
@@ -117,6 +120,7 @@ export function initScene(canvas: HTMLCanvasElement, deck: HTMLElement) {
   const rnd = new Float32Array(N * 4); for (let i = 0; i < rnd.length; i++) rnd[i] = Math.random();
   buf('aR', rnd, 4);
   const U = (n: string) => gl.getUniformLocation(pr, n);
+  const uPulse = U('uPulse'), uRep = U('uRep'), uMp = U('uMp');
   const uP = U('uP'), uT = U('uT'), uAsp = U('uAsp'), uSz = U('uSz'), uM = U('uM'), uPl = U('uPl'), uCol = U('uCol'), uDark = U('uDark'), uRm = U('uRm');
   gl.uniform1f(uRm, reduce ? 1 : 0);
   gl.disable(gl.DEPTH_TEST); gl.enable(gl.BLEND);
@@ -125,6 +129,15 @@ export function initScene(canvas: HTMLCanvasElement, deck: HTMLElement) {
   size(); addEventListener('resize', size);
   const last = 5;
   let target = +(deck.dataset.i || 0), p = target, v = 0, mx = 0, my = 0, tmx = 0, tmy = 0, raf = 0, t0 = performance.now();
+  let pulse = 0, rep = 0, repT = 0, px = 2, py = 2, drag = 0, dragT = 0;
+  // события сайта → «вдох» сцены; свайп на телефоне → фигура начинает перетекать под пальцем
+  addEventListener('scene:pulse', (e) => { pulse = Math.min(1.6, pulse + ((e as CustomEvent).detail ?? 0.6)); wake(); });
+  addEventListener('scene:drag', (e) => { dragT = (e as CustomEvent).detail ?? 0; wake(); });
+  const pointAt = (x: number, y: number) => { px = x / innerWidth * 2 - 1; py = -(y / innerHeight * 2 - 1); repT = 1; wake(); };
+  addEventListener('pointermove', (e) => pointAt(e.clientX, e.clientY), { passive: true });
+  addEventListener('touchmove', (e) => pointAt(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+  addEventListener('touchend', () => { repT = 0; }, { passive: true });
+  document.addEventListener('mouseleave', () => { repT = 0; });
   new MutationObserver(() => { target = +(deck.dataset.i || 0); wake(); }).observe(deck, { attributes: true, attributeFilter: ['data-i'] });
   if (!phone) addEventListener('pointermove', (e) => { tmx = e.clientX / innerWidth * 2 - 1; tmy = e.clientY / innerHeight * 2 - 1; wake(); }, { passive: true });
   const place = (x: number) => {                                   // позиция/масштаб/яркость между экранами
@@ -139,12 +152,16 @@ export function initScene(canvas: HTMLCanvasElement, deck: HTMLElement) {
     const k = reduce ? 1 : 1 - Math.exp(-dt * 3.2); v = (target - p) * k; p += v;
     if (Math.abs(target - p) < 0.0005) p = target;
     mx += (tmx - mx) * 0.06; my += (tmy - my) * 0.06;
-    const dark = Math.max(0, Math.min(1, p - (last - 1)));            // последний экран: фон латунный, частицы тёмные
+    pulse *= Math.exp(-dt * 2.2); rep += (repT - rep) * (1 - Math.exp(-dt * 6)); repT *= Math.exp(-dt * 0.45);
+    drag += (dragT - drag) * (1 - Math.exp(-dt * 12));
+    const pe = Math.max(0, Math.min(last, p + drag));
+    const dark = Math.max(0, Math.min(1, pe - (last - 1)));            // последний экран: фон латунный, частицы тёмные
     const bg = BG0.map((c, i) => c + (BG1[i] - c) * dark), col = C0.map((c, i) => c + (C1[i] - c) * dark);
     gl.clearColor(bg[0], bg[1], bg[2], 1); gl.clear(gl.COLOR_BUFFER_BIT);
     if (dark > 0.5) gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); else gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
-    gl.uniform1f(uP, p); gl.uniform1f(uT, now / 1000); gl.uniform2f(uM, mx, my);
-    gl.uniform4fv(uPl, place(p)); gl.uniform3fv(uCol, col); gl.uniform1f(uDark, dark);
+    gl.uniform1f(uP, pe); gl.uniform1f(uT, now / 1000); gl.uniform2f(uM, mx, my);
+    gl.uniform1f(uPulse, pulse); gl.uniform1f(uRep, rep); gl.uniform2f(uMp, px, py);
+    gl.uniform4fv(uPl, place(pe)); gl.uniform3fv(uCol, col); gl.uniform1f(uDark, dark);
     gl.drawArrays(gl.POINTS, 0, N);
     if (!document.hidden && !reduce) raf = requestAnimationFrame(frame);
   };
