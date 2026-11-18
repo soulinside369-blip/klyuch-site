@@ -42,7 +42,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
   <div class="trailer" id="trailer" aria-hidden="true">
     <i class="tv-bar tv-top"></i><i class="tv-bar tv-bot"></i>
     <i class="tv-mote"></i>
-    <!-- 0,6–1,9 с: разрез замка — ключ входит, пять штифтов-направлений встают на линию среза -->
+    <!-- 1,1–5,8 с: разрез замка — ключ входит, пять штифтов-направлений встают на линию среза -->
     <div class="tv-lock">
       <svg class="tv-lock-svg" viewBox="0 0 600 260" fill="none">
         <rect x="40" y="26" width="520" height="208" rx="26" fill="#0D0E11" stroke="#2A2D33" stroke-width="2"/>
@@ -66,24 +66,24 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
       </svg>
       <div class="tv-labels">{trailer.pins.map((t, k) => <span style={`--k:${k}`}>{t}</span>)}</div>
     </div>
-    <!-- 1,9–3,3 с: боли клиента мерцают, как помехи камеры, и зачёркиваются по ударам -->
+    <!-- 5,5–9,5 с: боли клиента мерцают, как помехи камеры, и зачёркиваются по ударам -->
     <div class="tv-pains">{trailer.pains.map((t, k) => <span class={`tv-pain p${k}`} style={`--k:${k}`}>{t}</span>)}</div>
-    <!-- 3,3–4,5 с: поворот ключа, ударная волна, вспышка -->
+    <!-- 9,1–12,9 с: поворот ключа, ударная волна, вспышка -->
     <i class="tv-wave"></i><i class="tv-flash"></i>
     <p class="tv-title">{trailer.turn}</p>
-    <!-- 4,5–5,9 с: полёт сквозь карточки к «вашему проекту» -->
+    <!-- 12,5–16,3 с: полёт сквозь карточки к «вашему проекту» -->
     <div class="tv-tunnel">
       {trailer.tunnel.map((t, k) => <span class={`tv-card c${k}`} style={`--k:${k}`}><i></i><b>{t}</b></span>)}
       <div class="tv-you"><span>{trailer.proof}</span><b>{trailer.you}</b></div>
     </div>
-    <!-- 5,9–7,0 с: знак -->
+    <!-- 16,2–18,6 с: знак -->
     <div class="tr-key">
       <svg viewBox="0 0 300 120" fill="none" aria-hidden="true">
         <circle class="tr-draw" pathLength="1" cx="60" cy="60" r="40" stroke="#E8B04B" stroke-width="3"/>
         <circle cx="60" cy="60" r="12" stroke="#3A3E45" stroke-width="3"/>
         <path class="tr-draw" pathLength="1" d="M100 60H290M262 60v32M240 60v20M218 60v12" stroke="#E8B04B" stroke-width="3"/>
       </svg>
-      <span class="tr-word" style="--t:6.15s;--st:80ms;--di:.75s"><Split text={brand.name} /></span>
+      <span class="tr-word" style="--t:16.8s;--st:110ms;--di:.9s"><Split text={brand.name} /></span>
       <span class="tv-sub">{hero.kicker}</span>
     </div>
     <button class="tr-sound" type="button" id="tr-sound"><span class="tr-eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="ts-d">Смотреть со звуком</span><span class="ts-m">Со звуком</span></button>
@@ -287,7 +287,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
     let soundReady: () => void = () => {};
     let soundReady0: () => void = () => {};
     const trailerEl = document.getElementById('trailer')!;
-    const T_END = 7000;                                              // 7 с кадров, затем 1,2 с растворения в скважину
+    const T_END = 19000;                                             // 19 с кадров (каждая надпись ≥ 1,5 с), затем 1,2 с растворения
     let tm = 0, goAt = 0, scored = false;
     const endTrailer = () => {
       if (!playing) return; playing = false; clearTimeout(tm);
