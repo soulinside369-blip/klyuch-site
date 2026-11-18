@@ -44,7 +44,7 @@ function iosHaptic() {
 
 export function haptic(name: Feel) {
   const p = PATTERNS[name];
-  if (canVibrate) { try { nav!.vibrate([...p]); } catch {} return; }
+  if (canVibrate) { const ua = (nav as Navigator & { userActivation?: { hasBeenActive: boolean } }).userActivation; if (ua && !ua.hasBeenActive) return; try { nav!.vibrate([...p]); } catch {} return; }
   if (isIOS) { iosHaptic(); if (p.length > 2) setTimeout(iosHaptic, p[0] + p[1]); }
 }
 

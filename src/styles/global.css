@@ -21,7 +21,7 @@
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--text);font:400 17px/1.55 var(--body)}
 /* плёночное зерно поверх всего */
-body::after{content:'';position:fixed;inset:-50%;z-index:90;pointer-events:none;opacity:.07;
+body::after{content:'';position:fixed;inset:-8%;z-index:90;pointer-events:none;opacity:.07;will-change:transform;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   animation:grain 1s steps(4) infinite}
 @media(pointer:coarse){body::after{animation:none;opacity:.05}}
@@ -845,12 +845,6 @@ html.deck-on.on-contact .sound-toggle{color:#111}
 @media(max-width:640px){.sound-label{display:none}.bar-links{gap:16px}}
 
 /* ---------- курсор ---------- */
-.cursor{display:none}
-.has-cursor .cursor{display:block;position:fixed;left:0;top:0;z-index:95;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;background:#fff;mix-blend-mode:difference;pointer-events:none;transition:width .3s var(--ease),height .3s var(--ease),margin .3s var(--ease)}
-.has-cursor,.has-cursor *{cursor:none!important}
-.has-cursor input[type=text],.has-cursor input:not([type]),.has-cursor textarea{cursor:text!important}
-.has-cursor .cursor.away{opacity:0}
-.has-cursor .cursor.hover{width:56px;height:56px;margin:-28px 0 0 -28px}
 
 /* ---------- служебные страницы ---------- */
 .page{min-height:100vh;padding:120px var(--pad) 80px}

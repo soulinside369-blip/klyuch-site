@@ -226,7 +226,6 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
     {slides.map((s, i) => <button class="dot" type="button" data-go={i} aria-current={i === 0 ? 'true' : 'false'}><span>{s.label}</span></button>)}
   </nav>
   <div class="counter" aria-hidden="true"><b id="cur">01</b> / 0{slides.length}</div>
-  <div class="cursor" aria-hidden="true"></div>
   <div class="progress" aria-hidden="true"><span id="progress-bar"></span></div>
   <button class="scroll-hint" type="button" data-go="1" aria-label="Следующий экран">
     <span class="hint-mouse" aria-hidden="true"><i></i></span>
@@ -549,37 +548,35 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
       p.addEventListener('click', () => { if (!p.classList.contains('open')) { openPanel(p); feel('open'); } });
     });
 
-    /* ---------- фонарик, курсор, магнитные кнопки (только мышь) ---------- */
+    /* ---------- фонарик, курсор, магнитные кнопки (только мышь) ----------
+       Скорость (18.11, «всё в замедленном действии»): свой курсор убран — системный рисуется без задержки;
+       переменные пишем не в корень (это пересчёт стилей всей страницы), а только в первый слайд;
+       цикл кадров спит, когда мышь не двигается. */
     if (matchMedia('(pointer: fine)').matches && !reduce) {
-      const cursor = document.querySelector<HTMLElement>('.cursor')!;
-      let mx = innerWidth / 2, my = innerHeight / 2, cx = mx, cy = my;
-      window.addEventListener('mousemove', (e) => {
-        mx = e.clientX; my = e.clientY;
-        root.style.setProperty('--mx', `${mx}px`); root.style.setProperty('--my', `${my}px`);
-        const h = (e.target as HTMLElement).closest('a,button,.panel,label,input');
-        cursor.classList.toggle('hover', !!h); cursor.classList.remove('away');
-      });
-      document.addEventListener('mouseleave', () => cursor.classList.add('away'));
-      // Скважина «смотрит» на мышь: свет за дверью и сама скважина смещаются (те же --tx/--ty, что у наклона телефона).
-      // Экономно: центр скважины считаем при смене размера, а не каждый кадр; переменные пишем, только пока они меняются
-      // (запись в корень пересчитывает стили страницы — иначе на слабом телефоне подтормаживает).
+      const start = document.querySelector<HTMLElement>('.s-start')!;
+      let mx = innerWidth / 2, my = innerHeight / 2, raf = 0;
       let tx = 0, ty = 0, kcx = 0, kcy = 0, wx = '', wy = '';
       const keyEl = document.querySelector<HTMLElement>('.of-cards');
       const measureKey = () => { if (!keyEl) return; const r = keyEl.getBoundingClientRect(); kcx = r.left + r.width / 2; kcy = r.top + r.height * 0.5; };
       addEventListener('resize', () => setTimeout(measureKey, 200)); setTimeout(measureKey, 300);
-      const loop = () => {
-        if (Math.abs(mx - cx) + Math.abs(my - cy) > 0.3) { cx += (mx - cx) * 0.2; cy += (my - cy) * 0.2; cursor.style.transform = `translate(${cx}px, ${cy}px)`; }
-        if (keyEl && i === 0 && !playing && kcx) {
-          const gx = Math.max(-1, Math.min(1, (mx - kcx) / (innerWidth * 0.45)));
-          const gy = Math.max(-1, Math.min(1, (my - kcy) / (innerHeight * 0.45)));
-          tx += (gx - tx) * 0.06; ty += (gy - ty) * 0.06;
-          const nx = tx.toFixed(2), ny = ty.toFixed(2);
-          if (nx !== wx) { root.style.setProperty('--tx', nx); wx = nx; }
-          if (ny !== wy) { root.style.setProperty('--ty', ny); wy = ny; }
-        }
-        requestAnimationFrame(loop);
+      const frame = () => {
+        raf = 0;
+        if (i !== 0 || playing) return;
+        start.style.setProperty('--mx', `${mx}px`); start.style.setProperty('--my', `${my}px`);
+        if (!keyEl || !kcx) return;
+        const gx = Math.max(-1, Math.min(1, (mx - kcx) / (innerWidth * 0.45)));
+        const gy = Math.max(-1, Math.min(1, (my - kcy) / (innerHeight * 0.45)));
+        tx += (gx - tx) * 0.35; ty += (gy - ty) * 0.35;                 // наклон карточек — быстро, без «киселя»
+        const nx = tx.toFixed(2), ny = ty.toFixed(2);
+        if (nx !== wx) { start.style.setProperty('--tx', nx); wx = nx; }
+        if (ny !== wy) { start.style.setProperty('--ty', ny); wy = ny; }
+        if (Math.abs(gx - tx) + Math.abs(gy - ty) > 0.02) raf = requestAnimationFrame(frame);   // доводим наклон и засыпаем
       };
-      root.classList.add('has-cursor', 'tilt'); loop();
+      window.addEventListener('mousemove', (e) => {
+        mx = e.clientX; my = e.clientY;
+        if (!raf) raf = requestAnimationFrame(frame);
+      }, { passive: true });
+      root.classList.add('has-cursor', 'tilt');
       document.querySelectorAll<HTMLElement>('[data-magnetic]').forEach((el) => {
         el.addEventListener('mousemove', (e) => {
           const r = el.getBoundingClientRect();
@@ -614,7 +611,8 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
 
     /* ---------- телефон: палец — фонарик, наклон — свет в скважине ---------- */
     if (matchMedia('(pointer: coarse)').matches && !reduce) {
-      const light = (x: number, y: number) => { root.style.setProperty('--mx', `${x}px`); root.style.setProperty('--my', `${y}px`); };
+      const st0 = document.querySelector<HTMLElement>('.s-start')!;
+      const light = (x: number, y: number) => { if (i !== 0) return; st0.style.setProperty('--mx', `${x}px`); st0.style.setProperty('--my', `${y}px`); };
       addEventListener('touchstart', (e) => light(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
       addEventListener('touchmove', (e) => light(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
       let tx = 0, ty = 0, gx = 0, gy = 0, tiltOn = false;
@@ -624,10 +622,15 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
         gy = Math.max(-1, Math.min(1, (e.beta - 45) / 25));
         if (!tiltOn) { tiltOn = true; root.classList.add('tilt'); requestAnimationFrame(loop); }
       };
+      let wx = '', wy = '';
       const loop = () => {
-        tx += (gx - tx) * 0.08; ty += (gy - ty) * 0.08;
-        root.style.setProperty('--tx', tx.toFixed(3)); root.style.setProperty('--ty', ty.toFixed(3));
-        requestAnimationFrame(loop);
+        if (i === 0) {
+          tx += (gx - tx) * 0.2; ty += (gy - ty) * 0.2;
+          const nx = tx.toFixed(2), ny = ty.toFixed(2);
+          if (nx !== wx) { st0.style.setProperty('--tx', nx); wx = nx; }
+          if (ny !== wy) { st0.style.setProperty('--ty', ny); wy = ny; }
+        }
+        setTimeout(() => requestAnimationFrame(loop), 32);             // датчик — 30 кадров/с хватает, батарея цела
       };
       type DOE = typeof DeviceOrientationEvent & { requestPermission?: () => Promise<string> };
       const DO = (window as unknown as { DeviceOrientationEvent?: DOE }).DeviceOrientationEvent;
