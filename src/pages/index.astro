@@ -9,13 +9,13 @@ import Split from '../components/Split.astro';
 import { brand, hero, trailer, publishedCases, contact, reviews, team, work, services, process, calc } from '../data/site';
 // Карусель офферов: заголовок режется на полосы-«штифты», каждая влетает со своим сдвигом (em) и встаёт в линию.
 const strips = [1.1, -0.7, 1.6, -1.2, 0.6, -0.95];
-const slides = [{ id: 'start', label: 'Старт' }, { id: 'work', label: 'Портфолио' }, { id: 'team', label: 'Команда' }, { id: 'process', label: 'Процесс' }, { id: 'calc', label: 'Расчёт' }, { id: 'contact', label: 'Контакты' }];
+const slides = [{ id: 'start', label: 'Старт' }, { id: 'work', label: 'Портфолио' }, { id: 'team', label: 'Подход' }, { id: 'process', label: 'Процесс' }, { id: 'calc', label: 'Расчёт' }, { id: 'contact', label: 'Контакты' }];
 const keyholePath = 'M43.5 56.8A18 18 0 1 1 56.5 56.8L63 86H37Z';
 const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/';
 ---
 <Base
-  title="КЛЮЧ — IT-команда полного цикла: сайты, IT-решения, реклама, автоматизация и ИИ"
-  description={`Сайты, IT-решения, реклама и трафик, автоматизация и ИИ — одной командой. ${team.period}: ${team.facts.map((f) => `${f.n} ${f.label}`).join(', ')}. Проекты от ${hero.range.from} до ${hero.range.to}.`}
+  title="КЛЮЧ — IT-задачи любой сложности: сайты, IT-решения, реклама, автоматизация и ИИ"
+  description={`Сайты, IT-решения, реклама и трафик, автоматизация и ИИ — один ответственный за весь цикл. ${team.period}: ${team.facts.map((f) => `${f.n} ${f.label}`).join(', ')}. Проекты от ${hero.range.from} до ${hero.range.to}.`}
 >
   <Fragment slot="head">
   <script is:inline>
@@ -147,7 +147,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
 
 
     <!-- 3. КОМАНДА (дверь справа): вес и обещание -->
-    <section class="slide s-team" id="team" aria-label="Команда">
+    <section class="slide s-team" id="team" aria-label="Подход">
       <div class="slide-inner team">
         <div class="team-main">
           <span class="ghost-num" aria-hidden="true">03</span>
