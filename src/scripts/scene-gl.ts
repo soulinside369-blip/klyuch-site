@@ -117,7 +117,7 @@ export function initScene(canvas: HTMLCanvasElement, deck: HTMLElement) {
   const gl = canvas.getContext('webgl', { antialias: false, alpha: false, powerPreference: 'low-power', premultipliedAlpha: false });
   if (!gl) return;
   const root = document.documentElement;
-  const phone = innerWidth <= 900;
+  let phone = innerWidth <= 900;                                     // пересчитывается при повороте и смене размера окна
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const mem = (navigator as Navigator & { deviceMemory?: number }).deviceMemory || 4;
   const N = phone || mem < 4 ? 6000 : 13000;
@@ -142,12 +142,12 @@ export function initScene(canvas: HTMLCanvasElement, deck: HTMLElement) {
   buf('aR', rnd, 4);
   const U = (n: string) => gl.getUniformLocation(pr, n);
   const uPulse = U('uPulse'), uRep = U('uRep'), uMp = U('uMp');
-  gl.uniform1f(U('uVert'), phone ? 1 : 0);
+  const uVert = U('uVert');
   const uP = U('uP'), uT = U('uT'), uAsp = U('uAsp'), uSz = U('uSz'), uM = U('uM'), uPl = U('uPl'), uCol = U('uCol'), uDark = U('uDark'), uRm = U('uRm');
   gl.uniform1f(uRm, reduce ? 1 : 0);
   gl.disable(gl.DEPTH_TEST); gl.enable(gl.BLEND);
   let dpr = Math.min(devicePixelRatio || 1, phone ? 1.5 : 1.75), count = N, probe = 0, slow = 0;
-  const size = () => { canvas.width = Math.round(innerWidth * dpr); canvas.height = Math.round(innerHeight * dpr); gl.viewport(0, 0, canvas.width, canvas.height); gl.uniform1f(uAsp, innerWidth / innerHeight); gl.uniform1f(uSz, (phone ? 2.2 : 2.6) * dpr); };
+  const size = () => { phone = innerWidth <= 900; gl.uniform1f(uVert, phone ? 1 : 0); canvas.width = Math.round(innerWidth * dpr); canvas.height = Math.round(innerHeight * dpr); gl.viewport(0, 0, canvas.width, canvas.height); gl.uniform1f(uAsp, innerWidth / innerHeight); gl.uniform1f(uSz, (phone ? 2.2 : 2.6) * dpr); };
   size(); addEventListener('resize', size);
   const last = 5;
   let target = +(deck.dataset.i || 0), p = target, v = 0, mx = 0, my = 0, tmx = 0, tmy = 0, raf = 0, t0 = performance.now();
@@ -161,7 +161,7 @@ export function initScene(canvas: HTMLCanvasElement, deck: HTMLElement) {
   addEventListener('touchend', () => { repT = 0; }, { passive: true });
   document.addEventListener('mouseleave', () => { repT = 0; });
   new MutationObserver(() => { target = +(deck.dataset.i || 0); wake(); }).observe(deck, { attributes: true, attributeFilter: ['data-i'] });
-  if (!phone) addEventListener('pointermove', (e) => { tmx = e.clientX / innerWidth * 2 - 1; tmy = e.clientY / innerHeight * 2 - 1; wake(); }, { passive: true });
+  addEventListener('pointermove', (e) => { if (phone) return; tmx = e.clientX / innerWidth * 2 - 1; tmy = e.clientY / innerHeight * 2 - 1; wake(); }, { passive: true });
   const place = (x: number) => {                                   // позиция/масштаб/яркость между экранами
     const T = phone ? PLACE_M : PLACE_D, a = Math.max(0, Math.min(last, Math.floor(x))), b = Math.min(last, a + 1), f = x - a;
     const e = f * f * (3 - 2 * f); return T[a].map((va, k) => va + (T[b][k] - va) * e);

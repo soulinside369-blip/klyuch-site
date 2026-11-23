@@ -434,30 +434,22 @@ html.tilt .oc.on{transform:perspective(1200px) rotateY(calc(var(--tx,0) * 7deg))
 @keyframes sa-line{to{stroke-dashoffset:0}}
 .oc.on .sa-fun span{animation:sc-in .4s var(--ease) calc(.9s + var(--j) * .1s) both}
 
-/* 04 автоматизация: заявка бежит по цепочке Заявка → CRM → Бот → Менеджер, ИИ в центре, Excel гаснет */
+/* 04 автоматизация: шесть систем (CRM, роботы, аналитика, парсинг, скрипты, интеграции) подключаются к ядру ИИ */
 .sc-auto{position:absolute;inset:0;border:1px solid var(--line);border-radius:12px;background:radial-gradient(circle at 50% 50%,rgba(232,176,75,.08),transparent 60%),#0B0C0E}
 .sf-lines{position:absolute;inset:0;width:100%;height:100%}
 .sf-lines path{fill:none;stroke:var(--line-3);stroke-width:1.5;vector-effect:non-scaling-stroke;stroke-dasharray:4 6}
 .oc.on .sf-lines path{animation:sf-flow 1s linear infinite;stroke:rgba(232,176,75,.55)}
 @keyframes sf-flow{to{stroke-dashoffset:-20}}
 .sf-node{position:absolute;z-index:1;translate:-50% -50%;padding:8px 12px;border:1px solid var(--line-3);border-radius:10px;background:#16181C;font:500 12px/1 var(--body);color:var(--text);white-space:nowrap;opacity:0}
-.n1{left:22%;top:24%}.n2{left:78%;top:24%}.n3{left:78%;top:76%}.n4{left:22%;top:76%}
 .sf-ai{position:absolute;left:50%;top:50%;translate:-50% -50%;display:grid;place-items:center;width:54px;height:54px;border-radius:50%;border:1.5px solid var(--accent);color:var(--accent);font:700 14px/1 var(--display);box-shadow:0 0 0 0 rgba(232,176,75,.5),inset 0 0 18px rgba(232,176,75,.25)}
 .oc.on .sf-ai{animation:sf-ai 1.6s ease-out infinite}
 @keyframes sf-ai{0%{box-shadow:0 0 0 0 rgba(232,176,75,.55),inset 0 0 18px rgba(232,176,75,.25)}100%{box-shadow:0 0 0 22px rgba(232,176,75,0),inset 0 0 18px rgba(232,176,75,.25)}}
-.sf-xls{position:absolute;left:50%;bottom:9%;translate:-50% 0;padding:4px 9px;border:1px dashed var(--line-3);border-radius:6px;font:400 10px var(--mono);color:var(--faint);text-decoration:line-through;text-decoration-color:var(--accent)}
 .sf-dot{position:absolute;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:#FFE3A6;box-shadow:0 0 10px 2px rgba(232,176,75,.9);opacity:0}
-.oc.on .sf-node{animation:sc-in .4s var(--ease) both}
-.oc.on .n2{animation-delay:.35s}.oc.on .n3{animation-delay:.7s}.oc.on .n4{animation-delay:1.05s}
-.oc.on .n4{animation:sc-in .4s var(--ease) 1.05s both,sf-hit .5s ease 1.4s}
+.oc.on .sf-node{animation:sc-in .35s var(--ease) calc(.06s + var(--j) * .11s) both,sf-hit .5s ease calc(.3s + var(--j) * .11s)}
 @keyframes sf-hit{50%{border-color:var(--accent);box-shadow:0 0 18px rgba(232,176,75,.5)}}
-.oc.on .n2{animation:sc-in .4s var(--ease) .35s both,sf-hit .5s ease .5s}.oc.on .n3{animation:sc-in .4s var(--ease) .7s both,sf-hit .5s ease .85s}
-.oc.on .d1{animation:sf-d1 .4s linear .1s both}.oc.on .d2{animation:sf-d2 .4s linear .45s both}.oc.on .d3{animation:sf-d3 .4s linear .8s both}
-@keyframes sf-d1{0%{opacity:1;left:22%;top:24%}85%{opacity:1}100%{opacity:0;left:78%;top:24%}}
-@keyframes sf-d2{0%{opacity:1;left:78%;top:24%}85%{opacity:1}100%{opacity:0;left:78%;top:76%}}
-@keyframes sf-d3{0%{opacity:1;left:78%;top:76%}85%{opacity:1}100%{opacity:0;left:22%;top:76%}}
-.oc.on .sf-xls{animation:sf-xls .6s ease 1.2s both}
-@keyframes sf-xls{to{opacity:.25}}
+.oc.on .sf-dot{animation:sf-dot .6s cubic-bezier(.5,0,.7,1) calc(.35s + var(--j) * .13s) both}
+@keyframes sf-dot{0%{opacity:0;left:var(--x);top:var(--y)}15%{opacity:1}85%{opacity:1}100%{opacity:0;left:50%;top:50%}}
+.sf-ai{z-index:2;background:#14120C}
 
 /* смена оффера — свет за карточками вспыхивает */
 html.k-tick .s-start::before{animation:k-glow .9s ease-out}

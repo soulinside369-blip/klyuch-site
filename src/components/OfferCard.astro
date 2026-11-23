@@ -48,13 +48,13 @@ const bars = [34, 46, 40, 58, 66, 78, 92];
     {scene === 'auto' && (
       <div class="sc-auto">
         <svg class="sf-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-          <path d="M22 24 H78" /><path d="M78 24 V76" /><path d="M78 76 H22" />
+          {[16, 50, 84].map((y) => [22, 78].map((x) => <path d={`M${x} ${y} L50 50`} />))}
         </svg>
-        <span class="sf-node n1">Заявка</span><span class="sf-node n2">CRM</span>
-        <span class="sf-node n3">Бот</span><span class="sf-node n4">Менеджер</span>
+        {['CRM', 'Роботы', 'Аналитика', 'Парсинг', 'Скрипты', 'Интеграции'].map((t, j) => <>
+          <span class="sf-node" style={`--j:${j};left:${j % 2 ? 78 : 22}%;top:${16 + Math.floor(j / 2) * 34}%`}>{t}</span>
+          <i class="sf-dot" style={`--j:${j};--x:${j % 2 ? 78 : 22}%;--y:${16 + Math.floor(j / 2) * 34}%`}></i>
+        </>)}
         <span class="sf-ai">ИИ</span>
-        <span class="sf-xls">Excel</span>
-        <i class="sf-dot d1"></i><i class="sf-dot d2"></i><i class="sf-dot d3"></i>
       </div>
     )}
   </div>
