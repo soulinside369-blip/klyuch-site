@@ -171,6 +171,7 @@ export function initScene(canvas: HTMLCanvasElement, deck: HTMLElement) {
   const TINT = [[0.91, 0.69, 0.29], [0.96, 0.82, 0.52], [0.93, 0.58, 0.3], [0.91, 0.72, 0.36], [1, 0.66, 0.22], [0.91, 0.69, 0.29]];
   const frame = (now: number) => {
     raf = 0;
+    if (root.classList.contains('trailer-on') && !root.classList.contains('trailer-out')) { t0 = now; raf = requestAnimationFrame(frame); return; }   // идёт трейлер — сцену за ним не рисуем
     // пружина к целевому экрану (~1,4 с), без перелёта
     const dt = Math.min(0.05, (now - t0) / 1000); t0 = now;
     const k = reduce ? 1 : 1 - Math.exp(-dt * 3.2); v = (target - p) * k; p += v;

@@ -145,26 +145,30 @@ export function playTrailerScore(elapsed: number) {
   const ok = (t: number) => at(t) >= -0.02;
   const d = (t: number) => Math.max(0, at(t));
   const pad = (from: number, to: number, f: number, g: number) => { if (elapsed < to - 0.5) tone(f, Math.max(0.6, to - Math.max(elapsed, from)), { gain: g, attack: 0.8, slideTo: f * 0.88, delay: d(from) }); };
-  pad(0, 10, 55, 0.07);                                                                                         // гул: замок и боли
-  pad(10.7, 16.6, 49, 0.06);                                                                                     // гул после поворота
+  pad(0, 12.1, 55, 0.07);                                                                                         // гул: замок и боли
+  pad(12.8, 18.7, 49, 0.06);                                                                                     // гул после поворота
   if (ok(0.3)) tone(1760, 0.8, { gain: 0.03, attack: 0.08, delay: d(0.3) });                                    // пылинка
-  if (ok(1.5)) noise(0.9, { gain: 0.08, from: 700, to: 4200, attack: 0.1, delay: d(1.5) });                     // ключ входит в замок
-  [0, 1, 2, 3, 4].forEach((k) => { const t = 2.3 + k * 0.3; if (!ok(t)) return;                                 // пять штифтов — щелчки
+  if (ok(0.6)) noise(2.2, { gain: 0.03, from: 300, to: 2600, attack: 1.2, delay: d(0.6) });                        // свет скользит по металлу
+  if (ok(1.2)) tone(2637, 1.6, { gain: 0.014, attack: 0.3, delay: d(1.2) });
+  if (ok(3.1)) noise(1.1, { gain: 0.08, from: 700, to: 4200, attack: 0.15, delay: d(3.1) });
+  [0, 1, 2, 3, 4].forEach((k) => { const t = 3.45 + k * 0.11; if (ok(t)) tone(1900 + k * 90, 0.02, { type: 'square', gain: 0.02, delay: d(t) }); }); // зубцы проходят штифты
+                      // ключ входит в замок
+  [0, 1, 2, 3, 4].forEach((k) => { const t = 4.4 + k * 0.32; if (!ok(t)) return;                                 // пять штифтов — щелчки
     tone(2400 - k * 120, 0.035, { type: 'square', gain: 0.05, delay: d(t) }); noise(0.05, { gain: 0.05, from: 6000, to: 3000, delay: d(t) }); });
-  if (ok(3.85)) [392, 587].forEach((f, k) => tone(f, 1.4, { gain: 0.03, attack: 0.15, delay: d(3.85) + k * 0.12 })); // линия среза
-  [0, 1, 2, 3].forEach((k) => { const t = 5.9 + k * 0.45; if (ok(t)) noise(0.3, { gain: 0.035, from: 3000, to: 800, delay: d(t) }); }); // помехи
-  [0, 1, 2, 3].forEach((k) => { const t = 7.5 + k * 0.45; if (!ok(t)) return;                                  // боли зачёркиваются
+  if (ok(5.8)) [392, 587].forEach((f, k) => tone(f, 1.4, { gain: 0.03, attack: 0.15, delay: d(5.8) + k * 0.12 })); // линия среза
+  [0, 1, 2, 3].forEach((k) => { const t = 8 + k * 0.45; if (ok(t)) noise(0.3, { gain: 0.035, from: 3000, to: 800, delay: d(t) }); }); // помехи
+  [0, 1, 2, 3].forEach((k) => { const t = 9.6 + k * 0.45; if (!ok(t)) return;                                  // боли зачёркиваются
     noise(0.22, { gain: 0.07, from: 5200, to: 900, delay: d(t) }); tone(120, 0.24, { gain: 0.18, slideTo: 50, delay: d(t) }); });
-  if (ok(10)) { tone(2300, 0.035, { type: 'square', gain: 0.06, delay: d(10) });                             // поворот: механизм
-    tone(1500, 0.05, { type: 'square', gain: 0.06, delay: d(10) + 0.25 }); }
-  if (ok(10.7)) { tone(70, 1.8, { gain: 0.34, slideTo: 32, delay: d(10.7) });                                   // «клац» и хвост
-    noise(1.6, { gain: 0.07, from: 2600, to: 300, filter: 'lowpass', delay: d(10.7) }); }
-  [0, 1, 2, 3].forEach((k) => { const t = 12.9 + k * 0.32; if (!ok(t)) return; tone(92, 0.16, { gain: 0.15, slideTo: 60, delay: d(t) }); }); // карточки — пульс
-  if (ok(12.8)) noise(1.2, { gain: 0.05, from: 400, to: 5000, attack: 0.8, delay: d(12.8) });
-  if (ok(13.8)) [392, 523, 659].forEach((f, k) => tone(f, 1.8, { gain: 0.03, attack: 0.3, delay: d(13.8) + k * 0.12 }));
-  if (ok(16.6)) { tone(70, 1.6, { gain: 0.3, slideTo: 33, delay: d(16.6) });                                    // знак: удар и аккорд
-    [523, 784, 1046].forEach((f, k) => tone(f, 2.2, { gain: 0.03, attack: 0.05, delay: d(16.65) + k * 0.06 })); }
-  if (ok(19)) noise(1.2, { gain: 0.07, from: 6000, to: 500, filter: 'lowpass', attack: 0.1, delay: d(19) }); // растворение в скважину
+  if (ok(12.1)) { tone(2300, 0.035, { type: 'square', gain: 0.06, delay: d(12.1) });                             // поворот: механизм
+    tone(1500, 0.05, { type: 'square', gain: 0.06, delay: d(12.1) + 0.25 }); }
+  if (ok(12.8)) { tone(70, 1.8, { gain: 0.34, slideTo: 32, delay: d(12.8) });                                   // «клац» и хвост
+    noise(1.6, { gain: 0.07, from: 2600, to: 300, filter: 'lowpass', delay: d(12.8) }); }
+  [0, 1, 2, 3].forEach((k) => { const t = 15 + k * 0.32; if (!ok(t)) return; tone(92, 0.16, { gain: 0.15, slideTo: 60, delay: d(t) }); }); // карточки — пульс
+  if (ok(14.9)) noise(1.2, { gain: 0.05, from: 400, to: 5000, attack: 0.8, delay: d(14.9) });
+  if (ok(15.9)) [392, 523, 659].forEach((f, k) => tone(f, 1.8, { gain: 0.03, attack: 0.3, delay: d(15.9) + k * 0.12 }));
+  if (ok(18.7)) { tone(70, 1.6, { gain: 0.3, slideTo: 33, delay: d(18.7) });                                    // знак: удар и аккорд
+    [523, 784, 1046].forEach((f, k) => tone(f, 2.2, { gain: 0.03, attack: 0.05, delay: d(18.75) + k * 0.06 })); }
+  if (ok(21.1)) noise(1.2, { gain: 0.07, from: 6000, to: 500, filter: 'lowpass', attack: 0.1, delay: d(21.1) }); // растворение в скважину
 }
 
 /** Отклик целиком: вибрация + звук (если включён). dir — направление для звука смены слайда. */

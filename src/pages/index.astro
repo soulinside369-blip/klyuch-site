@@ -40,6 +40,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
 
   <!-- ТРЕЙЛЕР v2 «Поворот ключа»: одна непрерывная «съёмка» механизма замка (план — docs/ТРЕЙЛЕР-v2-и-ОПТИМИЗАЦИЯ.md) -->
   <div class="trailer" id="trailer" aria-hidden="true">
+    <canvas class="tv-film" id="tv-film"></canvas>
     <i class="tv-bar tv-top"></i><i class="tv-bar tv-bot"></i>
     <i class="tv-mote"></i>
     <!-- 1,1–5,8 с: разрез замка — ключ входит, пять штифтов-направлений встают на линию среза -->
@@ -83,7 +84,7 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
         <circle cx="60" cy="60" r="12" stroke="#3A3E45" stroke-width="3"/>
         <path class="tr-draw" pathLength="1" d="M100 60H290M262 60v32M240 60v20M218 60v12" stroke="#E8B04B" stroke-width="3"/>
       </svg>
-      <span class="tr-word" style="--t:16.8s;--st:110ms;--di:.9s"><Split text={brand.name} /></span>
+      <span class="tr-word" style="--t:18.9s;--st:110ms;--di:.9s"><Split text={brand.name} /></span>
       <span class="tv-sub">{hero.kicker}</span>
     </div>
     <button class="tr-sound" type="button" id="tr-sound"><span class="tr-eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="ts-d">Смотреть со звуком</span><span class="ts-m">Со звуком</span></button>
@@ -289,17 +290,26 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
     let soundReady: () => void = () => {};
     let soundReady0: () => void = () => {};
     const trailerEl = document.getElementById('trailer')!;
-    const T_END = 19000;                                             // 19 с кадров (каждая надпись ≥ 1,5 с), затем 1,2 с растворения
+    const T_END = 21100;                                             // 21,1 с кадров (каждая надпись ≥ 1,5 с), затем 1,2 с растворения
     let tm = 0, goAt = 0, scored = false;
+    // 3D-киносцена ключа: отдельный файл, грузится только когда трейлер играет; нет WebGL2 — SVG-схема
+    let film: { stop: () => void; draw: (t: number) => void } | null = null;
+    const loadFilm = () => import('../scripts/key-film').then((m) => {
+      if (!playing || film || root.classList.contains('tr-go')) return;
+      const old = document.getElementById('tv-film') as HTMLCanvasElement, cv = old.cloneNode() as HTMLCanvasElement; old.replaceWith(cv);   // после повтора — свежий контекст
+      film = m.startKeyFilm(cv, () => t0(), [...document.querySelectorAll<HTMLElement>('.tv-labels span')], () => document.querySelector('.tr-key svg')?.getBoundingClientRect());
+      root.classList.toggle('film', !!film);
+    }).catch(() => {});
+    const stopFilm = () => { film?.stop(); film = null; root.classList.remove('film'); };
     const endTrailer = () => {
       if (!playing) return; playing = false; clearTimeout(tm);
       try { sessionStorage.setItem('ks_trailer', '1'); localStorage.setItem('ks_trailer_at', String(Date.now())); } catch {}
       root.classList.add('trailer-out');
-      setTimeout(() => { root.classList.remove('trailer-on', 'trailer-out', 'tr-go'); root.classList.add('trailer-off'); }, 1300);
+      setTimeout(() => { root.classList.remove('trailer-on', 'trailer-out', 'tr-go'); root.classList.add('trailer-off'); stopFilm(); }, 1300);
       setTimeout(() => root.classList.add('hero-in'), 250);
     };
     const begin = () => {
-      if (root.classList.contains('tr-go')) return;
+      if (!playing || root.classList.contains('tr-go')) return;
       root.classList.add('tr-go'); goAt = performance.now();
       tm = window.setTimeout(() => { goal('trailer_full'); endTrailer(); }, T_END);
     };
@@ -339,18 +349,18 @@ const B = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : im
     if (playing) {
       paintTr();
       // Старт после загрузки шрифта (не дольше 700 мс), чтобы буквы не «прыгали» с системного шрифта.
-      Promise.race([document.fonts?.ready, new Promise((r) => setTimeout(r, 700))]).then(begin);
+      Promise.all([Promise.race([document.fonts?.ready, new Promise((r) => setTimeout(r, 700))]), Promise.race([loadFilm(), new Promise((r) => setTimeout(r, 1500))])]).then(begin);
     }
     // Кнопка «Трейлер» в шапке: показать заново без перезагрузки. Клик — жест человека, поэтому звук играет сразу.
     document.querySelectorAll<HTMLAnchorElement>('.replay').forEach((a) => a.addEventListener('click', (e) => {
       e.preventDefault();
-      if (playing || reduce) return;
+      if (playing || reduce || root.classList.contains('trailer-out')) return;
       if (i !== 0) go(0, true);
       playing = true; scored = false; swallow = false;
       root.classList.remove('trailer-off', 'hero-in', 'tr-go', 'trailer-out');
       root.classList.add('trailer-on');
       void trailerEl.offsetWidth;                                     // кадры начинаются с нуля
-      setTimeout(() => { begin(); startScore(); paintTr(); }, 30);
+      Promise.race([loadFilm(), new Promise((r) => setTimeout(r, 1500))]).then(() => { if (!playing) return; begin(); startScore(); paintTr(); });
       goal('trailer_replay');
     }));
 
